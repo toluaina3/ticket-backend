@@ -8,8 +8,8 @@ RUN apt-get update \
 
 WORKDIR $(pwd):/usr/src/app/
 #RUN pwd # git clone --branch 4.2 --single-branch --depth 1 https:......url && chown -R bind mount data:www/ht
-COPY requirements ./
-RUN pip install -r requirements
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
 COPY . .
 EXPOSE 8000
 
