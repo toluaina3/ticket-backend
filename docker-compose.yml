@@ -1,0 +1,64 @@
+version: '2'
+services:
+    web:
+      build: .
+      #context: . #build the django web from docker file in the base directory
+      #dockerfile: Dockerfile-alternate 
+      container_name: cleancode_django_app
+      command: >
+        sh -c "python manage.py runserver"
+      networks:
+       vpcbr:
+         ipv4_address: 192.100.0.4
+      depends_on:
+        - db
+        - redis-cache
+
+     
+    db:
+      image: postgres
+      environment:
+       - POSTGRES_PASSWORD=tunmi2014
+       - POSTGRES_USER=feyintoluwa
+       - POSTGRES_DB=callapp
+      ports:
+       - '5432'
+      volumes:
+       - postgres.data:/var/lib/postgresql/data # save the data to postgres.data, data intact when compose is down
+      container_name: cleancode_postgresDB
+      networks:
+       vpcbr:
+         ipv4_address: 192.100.0.5
+    redis-cache:
+      image: library/redis:3.2
+      ports:
+      - 6379
+      volumes:
+      - redis-data:/data # bind mount, persistent data
+      - ./config/redis:/usr/local/etc/redis #bind mount the config file to docker redis
+      container_name: redis_cache
+      command: >
+        sh -c "redis-server  /usr/local/etc/redis/redis.conf"
+      environment:
+      -  INVENIO_CELERY_BROKER_URL= amqp://guest:**@127.0.0.1:5672//
+      networks:
+        vpcbr:
+          ipv4_address: 192.100.0.6
+      restart: on-failure
+
+      
+volumes: 
+  postgres.data:
+  redis-data:
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 192.100.0.0/24
+         gateway: 192.100.0.1
+       
+     
+   
+        
+

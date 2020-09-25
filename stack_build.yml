@@ -1,0 +1,80 @@
+version: "3" # version 3.1, to use secret for stack
+services:
+
+  redis-cache:   # redis cache build for the stack
+    image: redis:3.2
+    ports:
+      - "6739"
+    networks:
+      - frontend
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  psql_db: # build the psql database
+    image: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data # bind mount the volume of the database
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  webapp:
+    image: dockersamples/examplevotingapp_vote:before
+    ports:
+      - 80:80
+    networks:
+      - frontend
+    depends_on:
+      - redis-cache
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  adminapp:
+    image: dockersamples/examplevotingapp_result:before
+    ports:
+      - 5000:80
+    networks:
+      - backend
+    depends_on:
+      - psql_db
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  worker:
+    image: dockersamples/examplevotingapp_worker
+    networks:
+      - frontend
+      - backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels: [APP=VOTING]
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3 # max tries of 3 after continous failure
+        window: 120s
+      placement:
+        constraints: [node.role == manager]
+
+networks: #define the network
+  frontend:
+  backend:
+volumes:
+  db-data:
+

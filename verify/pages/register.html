@@ -1,0 +1,79 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+    <title>Registration</title>
+{% endblock title %}
+
+{% block content %}
+    <br>
+    <br>
+
+
+<div class="container p-5">
+<div class="form-group">
+
+<form action="" method="POST">
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% csrf_token %}
+{% if user_form.errors %}
+{% for field in user_form %}
+{% endfor %}
+{% endif %}
+<div class="form-row">
+<div class="form-group col-md-6 mb-0">
+{{ user_form.first_name|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-6 mb-0">
+{{ user_form.last_name|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-4 mb-0">
+{{ user_form.email|as_crispy_field }}
+</div>
+<div class="form-group col-md-4 mb-0">
+{{ user_form.password1|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-4 mb-0">
+{{ user_form.password2|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-2 mb-0">
+{{ role|crispy }}
+
+</div>
+<div class="form-group col-md-2 mb-0">
+{{ bio_context.branch|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-4 mb-0">
+{{ bio_context.department|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-4 mb-0">
+{{ bio_context.phone|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-4 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Register</button>
+</div>
+</div>
+</div>
+</form>
+</div>
+</div>
+    </div>
+{% endblock content %}

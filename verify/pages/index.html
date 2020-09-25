@@ -1,0 +1,133 @@
+{% load cacheops %}
+{% load static %}
+
+{% block title %}
+    <title>Ticket</title>
+{% endblock title %}
+
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <nav class="navbar navbar-expand-lg" style="background: #001952;">
+        <a class="navbar-brand" href="#"><img src=""/></a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+                <a class="nav-item nav-link active" href="{% url 'login' %}" style="color: white;">Ticket </a>
+
+
+            </div>
+        </div>
+        </div>
+        </div>
+        </div>
+    </nav>
+{% endblock head %}
+
+
+{% block content %}
+
+
+<div class="col-md-3 ml-md-auto">
+<br>
+<br>
+<form action="" method="POST">
+{% csrf_token %}
+
+
+
+    <style>
+    .form-elegant  {
+font-size: 0.8rem; }
+
+.form-elegant .z-depth-1a {
+-webkit-box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25);
+box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25); }
+
+.form-elegant .z-depth-1-half,
+.form-elegant .btn:hover {
+-webkit-box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15);
+box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15); }
+    </style>
+
+
+
+
+<section class="form-elegant">
+
+<!--Form without header-->
+<div class="card" style="background: #f5f3f3">
+<div class="card-body mx-4">
+
+
+<!--Header-->
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+ <button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</div>
+{% endfor %}
+{% endif %}
+
+
+<div class="text-center">
+<h3 class="dark-grey"><strong>Log in</strong></h3>
+</div>
+<!--Body-->
+<div class="md-form">
+<input type="email" id="Form-email1" class="form-control" name="email">
+<label for="Form-email1">Email</label>
+</div>
+
+<div class="md-form pb-3">
+<input type="password" id="Form-pass1" class="form-control" name="password">
+<label for="Form-pass1">Password</label>
+<p class="font-small blue-text d-flex justify-content-end">Forgot <a href="{% url 'password_reset' %}" class="blue-text ml-1">
+Password?</a></p>
+</div>
+
+<div class="text-center mb-3">
+<button type="Submit" class="btn blue-gradient btn-block btn-rounded z-depth-1a">Log in</button>
+</div>
+</div>
+</div>
+</section>
+    <br>
+
+
+
+<div class="container; fixed-bottom">
+<div class=" col-sm-3 ml-md-auto">
+{% if response %}
+<div class="alert alert-dark alert-dismissible fade show" style="text-align: center">
+{{ response }}
+<button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span>
+
+</div>
+{% else %}
+<p>Cookies not supported by browser</p>
+{% endif %}
+</div>
+</div>
+{% endblock content %}
+
+
+
+<body>
+
+{% cached 3600 staticfiles %}
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/jquery.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/mdb.min.js' %}"></script>
+<script src="{% static 'js/popper.min.js' %}"></script>
+{% endcached %}
+</body>
+
