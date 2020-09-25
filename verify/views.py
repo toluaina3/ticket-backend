@@ -6,14 +6,10 @@ from verify.models import User
 from .forms import RegisterForms, RoleForm, Bio_Form
 from django.db import transaction, IntegrityError
 from cacheops import cached_view
-from django.core.mail import send_mail, BadHeaderError
-from django.http import HttpResponse
 from django.contrib.auth.forms import PasswordResetForm
-from django.template.loader import render_to_string
 from django.db.models.query_utils import Q
-from django.utils.http import urlsafe_base64_encode
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_bytes
+from clean_code.tasks import send_mail_password_reset
+
 
 
 # Create your views here.
@@ -121,30 +117,14 @@ def password_reset_request(request):
             associated_users = User.objects.filter(Q(email=data))
             if associated_users.exists():
                 for user in associated_users:
-                    subject = "Ticket Password Reset Requested"
-                    email_template_name = "password/password_reset_email.txt"
-                    c = {
-                        "email": user.email,
-                        'domain': '127.0.0.1:8000',
-                        'site_name': 'Website',
-                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                        "user": user.get_full_name,
-                        'token': default_token_generator.make_token(user),
-                        'protocol': 'http',
-                    }
-                    email = render_to_string(email_template_name, c)
-                    # super admin can not reset password by email
-                    # cache query for superuser
                     if user.is_superuser:
                         messages.error(request, 'This user can not receive password by email')
                         return redirect('login')
+                    elif not user.is_active:
+                        messages.error(request, 'User not active')
+                        return redirect('login')
                     else:
-                        try:
-                            send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
-                        except BadHeaderError:
-                            return HttpResponse('Invalid header found.')
-                        except ConnectionError:
-                            return HttpResponse('No Internet Connection')
+                        send_mail_password_reset(user=user.id)
                         return redirect("/password_reset/done/")
             messages.error(request, 'Account does not exist.')
     password_reset_form = PasswordResetForm()
