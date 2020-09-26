@@ -11,7 +11,6 @@ from django.db.models.query_utils import Q
 from clean_code.tasks import send_mail_password_reset
 
 
-
 # Create your views here.
 def login_view(request):
     # test for cookies on browser
@@ -124,6 +123,7 @@ def password_reset_request(request):
                         messages.error(request, 'User not active')
                         return redirect('login')
                     else:
+                        # celery task to send email to user for password reset
                         send_mail_password_reset(user=user.id)
                         return redirect("/password_reset/done/")
             messages.error(request, 'Account does not exist.')

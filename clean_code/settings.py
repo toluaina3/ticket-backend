@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'crispy_forms'
 
+
 ]
 
 MIDDLEWARE = [
@@ -132,13 +133,17 @@ CACHEOPS_REDIS = {
 }
 CACHEOPS = {
     # cache `user model` get queries for 1 days
-    'auth.user': {'ops': 'get', 'timeout': 60 * 60 * 1},
+    'auth.user': {'ops': 'all', 'timeout': 60 * 60 * 1},
     # cache `user role` and `permission` get queries for 2 hour
     'request.roles_table_role': {'ops': ('fetch', 'get'), 'timeout': 60 * 2},
     # cache bio database queries for 2 minutes
     'request.bio.department': {'ops': 'get', 'timeout': 60 * 60 * 2},
     # cache the session data for 1 hour
     'django.session': {'ops': 'fetch', 'timeout': 60 * 60},
+    # cache the user request for 1 hour
+    'request.request_table': {'ops': 'get', 'timeout': 60 * 60 * 1},
+    # cache permission database queries for 2 minutes
+    'request.permission': {'ops': 'get', 'timeout': 60 * 2},
 
 }
 

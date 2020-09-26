@@ -28,6 +28,7 @@ def send_mail_password_reset(user):
     # cache query for superuser
     try:
         send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {}'.format(user.get_full_name))
     except BadHeaderError:
         logging.warning('BadHeaderError when trying to send email to {}'.format_map(user.get_full_name))
     except ConnectionError:
