@@ -21,7 +21,7 @@ jobs:
         paths:
         - /home/circleci/.local/lib/
     - run:
-        command: ./manage.py runserver
+        command: echo 'The code in CI Pipeline'
         name: Test
 workflows:
   main:
