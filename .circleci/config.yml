@@ -23,8 +23,4 @@ jobs:
     - run:
         command: echo 'The code in CI Pipeline'
         name: Test
-workflows:
-  main:
-    jobs:
-    - build-and-test
-  version: 2
+
