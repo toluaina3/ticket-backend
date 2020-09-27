@@ -25,6 +25,7 @@ from django.contrib.auth import views as auth_views
 if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
     urlpatterns = [
         path('admin/', admin.site.urls),
+
         re_path(r'^login/$', verify.login_view, name='login'),
         re_path(r'^home/$', login_required(verify.login_home, login_url='/login', redirect_field_name='pass'),
                 name='home'),
