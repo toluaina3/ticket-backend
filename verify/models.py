@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 import jwt
 from datetime import datetime, timedelta
 from django.conf import settings
-
+import uuid
 
 class UserManager(BaseUserManager):
     # use_in_migrations = True
@@ -47,6 +47,7 @@ class UserManager(BaseUserManager):
 
 # Create your models here.
 class User(AbstractBaseUser, PermissionsMixin):
+    user_pk = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     email = models.EmailField(verbose_name=_('Email Address'), unique=True, max_length=100)
     first_name = models.CharField(_('First Name'), max_length=30, blank=True)
     last_name = models.CharField(_('Last Name'), max_length=30, blank=True)

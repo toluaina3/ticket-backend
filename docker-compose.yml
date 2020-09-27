@@ -1,4 +1,4 @@
-version: '2'
+version: '3.3'
 services:
     web:
       build: .
@@ -26,9 +26,15 @@ services:
       volumes:
        - postgres.data:/var/lib/postgresql/data # save the data to postgres.data, data intact when compose is down
       container_name: cleancode_postgresDB
+      healthcheck:
+        #test:       #"pg_isready -U feyintoluwa|| exit 1"
+        interval: 20s
+        timeout: 10s
+        retries: 3
       networks:
        vpcbr:
          ipv4_address: 192.100.0.5
+
     redis-cache:
       image: library/redis:3.2
       ports:
@@ -56,8 +62,8 @@ networks:
     ipam:
      config:
        - subnet: 192.100.0.0/24
-         gateway: 192.100.0.1
-       
+         #gateway: 192.100.0.1
+
      
    
         

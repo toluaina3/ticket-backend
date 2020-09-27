@@ -46,8 +46,8 @@ def login_view(request):
 # @cached_view(timeout=120)
 def login_home(request):
     # return only database value, for database optimization
-    if bio.objects.filter(bio_user=request.user.id):
-        qs = bio.objects.get(bio_user=request.user.id).department
+    if bio.objects.filter(bio_user=request.user.pk):
+        qs = bio.objects.get(bio_user=request.user.pk).department
         # db attribute that are not callable is cached
         role = qs
     else:
@@ -86,8 +86,8 @@ def register_user(request):
                     role_get = roles_table.objects.get(role=get_form)
                     # save role information if user information has been saved
                     bio.objects.create(branch=beat.branch, department=beat.department,
-                                       phone=beat.phone, bio_user_id=post.id)
-                    permission.objects.create(user_permit_id=post.id, role_permit_id=role_get.role_id)
+                                       phone=beat.phone, bio_user_id=post.pk)
+                    permission.objects.create(user_permit_id=post.pk, role_permit_id=role_get.role_id)
                     # bio.objects.create(branch=beat.branch, department=beat.department,
                     # phone=beat.phone, job_title=beat.job_title, bio_user_id=post.id)
                     messages.success(request, '{}, was successfully registered'.
@@ -124,9 +124,11 @@ def password_reset_request(request):
                         return redirect('login')
                     else:
                         # celery task to send email to user for password reset
-                        send_mail_password_reset(user=user.id)
+                        send_mail_password_reset(user=user.pk)
                         return redirect("/password_reset/done/")
             messages.error(request, 'Account does not exist.')
     password_reset_form = PasswordResetForm()
     return render(request=request, template_name="password/password_reset.html",
                   context={"password_reset_form": password_reset_form})
+
+

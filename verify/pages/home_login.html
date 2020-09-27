@@ -1,4 +1,5 @@
 {% extends '0nebase.html' %}
+{% load cacheops %}
 {% load static %}
 {% load humanize %}
 
@@ -49,11 +50,13 @@
 <div class="row">
 <div class="stick-to-left card col-sm-4" style="box-shadow: 1px 1px 5px #b3b3b3" >
 
+
+{% cached 3600 staticfiles %}
 <script type="text/javascript" src="{% static 'js/mdb.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/daterangepicker.css' %}">
 <script type="text/javascript" src="{% static 'css/jquery1.min.js' %}"></script>
-
+{% endcached %}
 
 
 <!-- Bar charts Code-->
@@ -325,7 +328,7 @@ data-dismiss="alert" aria-label="Close">
 </div>
 
 </div>
-
+{% cached 3600 staticfiles %}
 <!-- JQuery -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <!-- Bootstrap tooltips -->
@@ -334,7 +337,7 @@ data-dismiss="alert" aria-label="Close">
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
 <!-- MDB core JavaScript -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
-
+{% endcached %}
 
 {% endblock content %}
 
