@@ -32,8 +32,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.100.0.4']
-INTERNAL_IPS = ('127.0.0.1',)
+ALLOWED_HOSTS = ['127.0.0.1']
+INTERNAL_IPS = '127.0.0.1'
 
 # Application definition
 
@@ -50,7 +50,13 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'cacheops',
     'debug_toolbar',
-    'crispy_forms'
+    'crispy_forms',
+
+
+
+
+
+
 
 
 ]
@@ -74,7 +80,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates'),
-                 os.path.join(BASE_DIR, 'verify/pages')]
+                 os.path.join(BASE_DIR, 'verify/pages'), os.path.join(BASE_DIR, 'request/pages'), ]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -131,20 +137,31 @@ CACHEOPS_REDIS = {
     'password': '$$ticket',
 
 }
+
 CACHEOPS = {
-    # cache `user model` get queries for 1 days
-    'auth.user': {'ops': 'all', 'timeout': 60 * 60 * 1},
-    # cache `user role` and `permission` get queries for 2 hour
-    'request.roles_table_role': {'ops': ('fetch', 'get'), 'timeout': 60 * 2},
-    # cache bio database queries for 2 minutes
-    'request.bio.department': {'ops': 'get', 'timeout': 60 * 60 * 2},
-    # cache the session data for 1 hour
-    'django.session': {'ops': 'fetch', 'timeout': 60 * 60},
+    # cache `user model` get queries for 1 hour
+    'verify.User': {'ops': ('fetch', 'get'), 'timeout': 60 * 60},
+    # cache `user role` and `permission` get queries for 15 minutes
+    'request.roles_table.role': {'ops': ('fetch', 'get'), 'timeout': 60 * 15},
+    # cache bio database queries for 1 minute
+    'request.bio': {'ops': 'get', 'timeout': 60 * 15},
     # cache the user request for 1 hour
     'request.request_table': {'ops': 'get', 'timeout': 60 * 60 * 1},
-    # cache permission database queries for 2 minutes
-    'request.permission': {'ops': 'get', 'timeout': 60 * 2},
+    # cache permission database queries for 1 day
+    'request.permission': {'ops': 'get', 'timeout': 60 * 60 * 24},
 
+}
+
+# django redis session
+SESSION_ENGINE = 'redis_sessions.session'
+
+SESSION_REDIS = {
+    'host': env('REDIS_HOST'),
+    'port': 6379,
+    'db': 1,
+    'password': '$$ticket',
+    'prefix': 'session',
+    'socket_timeout': 1
 }
 
 

@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 import uuid
 
+
 class UserManager(BaseUserManager):
     # use_in_migrations = True
     def create_user(self, email, first_name, last_name, password=None, commit=True):

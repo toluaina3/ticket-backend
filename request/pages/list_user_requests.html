@@ -1,0 +1,60 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>List Requests</title>
+{% endblock %}
+
+
+{% block content %}
+<div class="">
+<br>
+<button type="submit" class="btn btn-primary" style="background: #001952">View Requests</button>
+<a class="btn btn-primary" style="background: #001952" href="{% url 'request-create' pk=get_pk.user_pk%}">Create Request</a>
+<br>
+<div class="container p-5">
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if request_list != 'No Requests' %}
+<table class="table table-hover">
+<thead>
+<tr>
+<th scope="col">#</th>
+<th scope="col">Time</th>
+<th scope="col">Request</th>
+<th scope="col">Requester</th>
+<th scope="col">Assigned</th>
+<th>Status</th>
+
+</tr>
+</thead>
+<tbody>
+{% for list in request_list %}
+<tr>
+<th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
+<td>{{ list.request_request.request_open }}</td>
+<td>{{ list.request_request.category }}</td>
+<td>{{ list.user_request.get_full_name }}</td>
+    <td>{{ list.request_request.assigned_to }}</td>
+<td>{{ list.request_request.close_request }}</td>
+</tr>
+{% endfor %}
+{% else %}
+{{ request_list }}
+{% endif %}
+</div>
+
+
+</div>
+{% endblock %}

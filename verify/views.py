@@ -43,7 +43,7 @@ def login_view(request):
     return render(request, 'index.html', context)
 
 
-# @cached_view(timeout=120)
+#@cached_view(timeout=120)
 def login_home(request):
     # return only database value, for database optimization
     if bio.objects.filter(bio_user=request.user.pk):
@@ -77,7 +77,6 @@ def register_user(request):
         if user_valid and role_valid and bio_valid:
             with transaction.atomic():
                 try:
-
                     post = user_form.save(commit=False)
                     beat = bio_form.save(commit=False)
                     get_form = (role_form.data['role'])
@@ -88,11 +87,8 @@ def register_user(request):
                     bio.objects.create(branch=beat.branch, department=beat.department,
                                        phone=beat.phone, bio_user_id=post.pk)
                     permission.objects.create(user_permit_id=post.pk, role_permit_id=role_get.role_id)
-                    # bio.objects.create(branch=beat.branch, department=beat.department,
-                    # phone=beat.phone, job_title=beat.job_title, bio_user_id=post.id)
                     messages.success(request, '{}, was successfully registered'.
                                      format(post.first_name + ' ' + post.last_name))
-
                     # redirect to login page
                     return redirect('login')
                     # condition for user exists in database

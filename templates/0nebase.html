@@ -23,17 +23,17 @@
                 <a class="nav-item nav-link active" href="{% url 'home' %}" style="color: white">Ticket </a>
                 {% if request.user.is_authenticated %}
                      <a class="nav-item nav-link active" href="{% url 'home' %}" style="color: white">Home</a>
-                    <a class="nav-item nav-link active" href="" style="color: white">Request</a>
+                    <a class="nav-item nav-link active" href="{% url 'request' %}" style="color: white">Request</a>
 
 
                     <li>
                     <li class="nav-item active dropdown">
-                        <a class="nav-link dropdown" data-toggle="dropdown" href="#"
+                        <a class="nav-link dropdown" data-toggle="dropdown" href=""
                            role="tabpanel" aria-haspopup="true" aria-expanded="false" style="color: white">Account</a>
                      <div class="dropdown-menu">
                         {% if request.user.is_superuser or request.user.is_staff %}
                         <a class="dropdown-item" href="{% url 'register'  %}">Register Staff</a>
-                            <a class="dropdown-item" href="">User Management</a>
+                            <a class="dropdown-item" href="{% url 'user-management' %}">User Management</a>
                         {% endif %}
                         <a class="dropdown-item" href="">Profile</a>
                         <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
@@ -60,7 +60,8 @@
 <script src="{% static 'js/usage.js' %}"></script>
 <!-- Bootstrap tooltips -->
 <script src="{% static 'js/popper.min.js' %}"></script>
-<script src="{% static 'js/daterangepicker.min.js' %}"></script>
 {% endcached %}
+<script src="{% static 'js/daterangepicker.min.js' %}"></script>
+
 </body>
 

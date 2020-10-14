@@ -1,8 +1,12 @@
-CREATE INDEX user_index ON verify_user (email, password, id);
+CREATE INDEX user_index ON verify_user (email, password, user_pk);
 CREATE INDEX bio_index ON request_bio (department, bio_user_id);
 CREATE INDEX session_index ON django_session(session_key, session_data, expire_date);
 CREATE INDEX request_index ON request_request_table(request, request_time_closed, category, close_request,copy_team, assigned_to);
-
-
+CREATE INDEX role_index ON request_roles_table(role_id, role)
+CREATE INDEX permission_index ON request_permission(permission_id)
 
 celery -A clean_code worker -l INFO
+
+
+
+

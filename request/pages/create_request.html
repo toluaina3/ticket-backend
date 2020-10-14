@@ -1,0 +1,42 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>Create Requests</title>
+{% endblock %}
+
+<style>
+</style>
+
+
+{% block content %}
+<div class="">
+<br>
+<a  class="btn btn-primary" style="background: #001952" href="{% url 'request-list' pk=get_pk.user_pk %}">View Requests</a>
+<a class="btn btn-primary " style="background: #001952" href="">Create Request</a>
+<div class="container p-2">
+<br>
+<br>
+<form action="" method="POST">
+{% csrf_token %}
+<div class="form-row">
+<div class="form-group col-md-6 mb-0">
+{{ forms.request|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-2 mb-0">
+{{ forms.category|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-6 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Submit</button>
+</div>
+</div>
+</form>
+</div>
+
+
+
+</div>
+{% endblock %}

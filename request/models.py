@@ -36,7 +36,7 @@ class roles_table(models.Model):
 class permission(models.Model):
     permission_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     user_permit = models.ForeignKey(User, on_delete=models.CASCADE, related_name='permit_user')
-    role_permit = models.ForeignKey(roles_table, on_delete=models.CASCADE, related_name='permit_user')
+    role_permit = models.ForeignKey(roles_table, on_delete=models.CASCADE, related_name='permit_user_role')
 
     class Meta:
         verbose_name_plural = 'permissions'
@@ -52,19 +52,20 @@ class response_table(models.Model):
 
 
 class request_table(models.Model):
-    request = models.TextField(max_length=2000, blank=False, default='Raise a request', help_text='Whats your request')
+    request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
     # create task to send email to IT team
     request_open = models.DateTimeField(auto_now_add=True)
     request_time_closed = models.DateTimeField(auto_now=True, null=True)
     request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
-                        ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'))
+                        ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
+                        ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
     category = models.CharField(max_length=20, default='Network', choices=request_category)
     # not included in the form, auto fills
     # create task to send email to user for assigned request
-    assigned_to = models.CharField(max_length=40, blank=True)
+    assigned_to = models.CharField(max_length=40, blank=True, default='None')
     copy_team = models.CharField(max_length=40, blank=True, help_text='Copy team members')
     # view only to IT team
-    close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'))
+    close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'), ('Open', 'Open'))
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
 
     class Meta:
@@ -88,8 +89,6 @@ class request_table(models.Model):
 class user_request_table(models.Model):
     user_request = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_request_link')
     request_request = models.ForeignKey(request_table, on_delete=models.CASCADE, related_name='request_request_link')
-    # if it accept is true, update assigned_to in request table to request.user.get_full_name
-    IT_accept = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'User_request_table'

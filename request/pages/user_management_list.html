@@ -1,10 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends '0nebase.html' %}
+
+{% block title %}
+<title>User Management</title>
+{% endblock %}
+
+
+{% block content %}
+<br>
+<div class="container p-5">
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</div>
+{% endfor %}
+{% endif %}
+
+<table class="table table-hover">
+<thead>
+<tr>
+<th scope="col">#</th>
+<th scope="col">Name</th>
+<th scope="col">Role</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>
+
+{% if request.user.is_superuser %}
+{% for list in user_query %}
+<tr>
+<th scope="row">{{ page_obj.start_index|add:forloop.counter0 }}</th>
+<td><a href="{% url 'update-user-management' pk=list.user_permit.user_pk %}" style="color: black">{{ list.user_permit.get_full_name}}</a></td>
+<td>{{ list.role_permit.role }}</td>
+<td><a class="badge btn-blue" href="{% url 'user-active' pk=list.user_permit.user_pk %}">{% if list.user_permit.is_active %} Deactivate{% else %}Activate{% endif %}</a></td>
+</tr>
+{% endfor %}
+{% endif %}
+
+</tbody>
+</table>
+
+
+
+<div class="pagination justify-content-center">
+<span class="step-links border border-light">
+{% if page_obj.has_previous %}
+<a class="badge btn-outline-dark" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+{% endif %}
+<span class="current badge">
+Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+</span>
+{% if page_obj.has_next %}
+<a class="badge btn-outline-dark" href="?page={{ page_obj.next_page_number }}">Next</a>
+<a class="badge btn-outline-dark" href="?page={{ page_obj.paginator.num_pages }}">Last&raquo;</a>
+{% endif %}
+</span>
+</div>
+
+
+</div>
+{% endblock %}
