@@ -149,6 +149,9 @@ CACHEOPS = {
     'request.request_table': {'ops': 'get', 'timeout': 60 * 60 * 1},
     # cache permission database queries for 1 day
     'request.permission': {'ops': 'get', 'timeout': 60 * 60 * 24},
+    # cache the user request for 1 hour
+    'request.user_request_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
+
 
 }
 

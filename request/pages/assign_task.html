@@ -1,0 +1,74 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>Request-View</title>
+{% endblock %}
+
+
+{% block content %}
+
+<style>
+    .form-elegant .font-small {
+font-size: 0.8rem; }
+
+.form-elegant .z-depth-1a {
+-webkit-box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25);
+box-shadow: 0 2px 5px 0 rgba(55, 161, 255, 0.26), 0 4px 12px 0 rgba(121, 155, 254, 0.25); }
+
+.form-elegant .z-depth-1-half,
+.form-elegant .btn:hover {
+-webkit-box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15);
+box-shadow: 0 5px 11px 0 rgba(85, 182, 255, 0.28), 0 4px 15px 0 rgba(36, 133, 255, 0.15); }
+</style>
+
+
+
+
+<div class="container p-5">
+<div class="form-group">
+
+<form action="" method="POST">
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</div>
+
+{% endfor %}
+{% endif %}
+<br>
+{% csrf_token %}
+{% if user_form.errors %}
+{% for field in user_form %}
+{% endfor %}
+{% endif %}
+<div class=" list-group-item-action list-group-item  card-columns col-sm-8">
+<p>{{ query }}</p>
+</div>
+
+<div class="form-row">
+<div class="form-group col-md-2 mb-0">
+<br>
+{{ assign.assigned_to|as_crispy_field }}
+</div>
+<div class="form-group col-md-2 mb-0">
+<br>
+{{ assign.copy_team|as_crispy_field }}
+</div>
+<div class="form-group col-md-2 mb-0">
+<br>
+{{ assign.close_request|as_crispy_field }}
+</div>
+<div class="form-group col-md-12 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Update</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}

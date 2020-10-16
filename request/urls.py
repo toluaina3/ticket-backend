@@ -13,6 +13,7 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^user/active/(?P<pk>[-\w\d]+)$', views.deactivate_user, name='user-active'),
         re_path(r'^request/$', views.requests_view, name='request'),
         re_path(r'^request/create/(?P<pk>[-\w\d]+)$', views.requests_user_create, name='request-create'),
-        re_path(r'^request/list/(?P<pk>[-\w\d]+)$', views.list_user_request, name='request-list')
+        re_path(r'^request/list/(?P<pk>[-\w\d]+)$', views.list_user_request, name='request-list'),
+        re_path(r'^request/assign/(?P<pk>[-\w\d]+)$', views.assign_task, name='assign-task'),
 
     ]

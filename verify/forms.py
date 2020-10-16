@@ -2,6 +2,19 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import forms
 from .models import User
 from request.models import roles_table, bio, request_table
+from django.db.models.query_utils import Q
+
+
+class Assign_Forms(forms.ModelForm):
+    # get the it team from query into the choice field
+    choices = [(user.first_name, user.get_full_name)
+               for user in (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
+    assigned_to = forms.ChoiceField(choices=choices, required=False)
+    copy_team = forms.ChoiceField(choices=choices, required=False)
+
+    class Meta:
+        model = request_table
+        fields = ['assigned_to', 'copy_team', 'close_request']
 
 
 class Request_Forms(forms.ModelForm):
