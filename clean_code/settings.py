@@ -137,13 +137,14 @@ CACHEOPS_REDIS = {
     'password': '$$ticket',
 
 }
+CACHEOPS_DEGRADE_ON_FAILURE = True
 
 CACHEOPS = {
     # cache `user model` get queries for 1 hour
     'verify.User': {'ops': ('fetch', 'get'), 'timeout': 60 * 60},
     # cache `user role` and `permission` get queries for 15 minutes
-    'request.roles_table.role': {'ops': ('fetch', 'get'), 'timeout': 60 * 15},
-    # cache bio database queries for 1 minute
+    'request.roles_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 15},
+    # cache bio database queries for 15 minute
     'request.bio': {'ops': 'get', 'timeout': 60 * 15},
     # cache the user request for 1 hour
     'request.request_table': {'ops': 'get', 'timeout': 60 * 60 * 1},

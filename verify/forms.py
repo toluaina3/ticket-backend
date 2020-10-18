@@ -7,7 +7,7 @@ from django.db.models.query_utils import Q
 
 class Assign_Forms(forms.ModelForm):
     # get the it team from query into the choice field
-    choices = [(user.first_name, user.get_full_name)
+    choices = [(user.first_name + ' ' + user.last_name, user.get_full_name)
                for user in (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
     assigned_to = forms.ChoiceField(choices=choices, required=False)
     copy_team = forms.ChoiceField(choices=choices, required=False)

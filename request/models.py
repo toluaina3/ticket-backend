@@ -1,6 +1,7 @@
 from django.db import models
 from verify.models import User
 import uuid
+from django.utils import timezone
 
 
 # Create your models here.
@@ -54,8 +55,8 @@ class response_table(models.Model):
 class request_table(models.Model):
     request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
     # create task to send email to IT team
-    request_open = models.DateTimeField(auto_now_add=True)
-    request_time_closed = models.DateTimeField(auto_now=True, null=True)
+    request_open = models.DateTimeField(auto_now_add=True, editable=False)
+    request_time_closed = models.DateTimeField(auto_now=True, null=True, editable=False)
     request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
                         ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
                         ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
@@ -65,7 +66,7 @@ class request_table(models.Model):
     assigned_to = models.CharField(max_length=40, blank=True, default='None')
     copy_team = models.CharField(max_length=40, blank=True, help_text='Copy team members')
     # view only to IT team
-    close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'), ('Open', 'Open'))
+    close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'))
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
 
     class Meta:
@@ -73,8 +74,8 @@ class request_table(models.Model):
 
     # update the time when the request in close, can be done in view too
     def time_to_close_request(self):
-        if self.close_request == 'Closed':
-            self.close_request = self.request_time_closed
+        if self.close_request == 'Closed' or 'Cancelled':
+           # self.close_request = self.request_time_closed
             return self.close_request
 
     def save(self, *args, **kwargs):

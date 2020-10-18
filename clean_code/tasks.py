@@ -53,7 +53,7 @@ def send_mail_request_raised(user):
         logging.warning(
             'No internet connection detected when trying to send email to {}'.format(user.get_full_name))
 
-
+# the it support email has been hard coded into the function
 @app.task
 def send_mail_request_raised_it_team(user):
     UserModel = get_user_model()
@@ -76,3 +76,19 @@ def send_mail_request_raised_it_team(user):
 @app.task
 def logging_info_task(msg):
     logging.info('{:%H:%M %d/%m/%Y }'.format(datetime.now()) + msg)
+
+
+@app.task
+def send_mail_task_assigned_user(user, assign):
+    UserModel = get_user_model()
+    user = UserModel.objects.get(pk=user)
+    subject = "Your request has been assigned to an IT staff "
+    email = (' Your request has been assigned to {}, he will be with your shortly. Thank you'.format(assign))
+    try:
+        send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {}'.format(user.email))
+    except BadHeaderError:
+        logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
+    except ConnectionError:
+        logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
+

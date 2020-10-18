@@ -7,9 +7,10 @@ from .models import bio, roles_table, user_request_table, request_table
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
-from verify.forms import Request_Forms, Assign_Forms
+from verify.forms import Request_Forms, Assign_Forms, RegisterForms
 from cacheops import invalidate_model, invalidate_obj
-from clean_code.tasks import send_mail_request_raised, send_mail_request_raised_it_team, logging_info_task
+from clean_code.tasks import send_mail_request_raised, \
+    send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
@@ -28,6 +29,9 @@ def update_user_management(request, pk=None):
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
+        first_name = request.POST['first_name']
+        last_name = request.POST['last_name']
+        email = request.POST['email']
         form_two = RoleForm(request.POST)
         form_three = UpdateBioForms(request.POST)
         if form_two.is_valid() and form_three.is_valid():
@@ -38,12 +42,17 @@ def update_user_management(request, pk=None):
                     post_three = form_three.save(commit=False)
                     get_role = roles_table.objects.get(role=post_two)
                     # invalidate models before update signal
-                    invalidate_model(bio, using=bio)
                     bio.objects.filter(Q(bio_user_id=get_pk)).update(branch=post_three.branch,
                                                                      department=post_three.department)
                     permission.objects.filter(Q(user_permit_id=get_pk)).update(role_permit_id=get_role.pk)
+                    # update the user's info
+                    User.objects.filter(user_pk=get_pk).update(first_name=first_name, last_name=last_name, email=email)
                     messages.success(request, '{}, was successfully Updated'.
                                      format(get_pk.first_name + ' ' + get_pk.last_name))
+                    # invalidate the model tables
+                    invalidate_model(bio)
+                    invalidate_model(roles_table)
+                    invalidate_model(User)
                     return redirect('user-management')
                 except ConnectionError:
                     messages.error(request, 'Database Error')
@@ -53,7 +62,8 @@ def update_user_management(request, pk=None):
     else:
         form_two = RoleForm(instance=roles_table.objects.get(permit_user_role__user_permit_id=get_pk))
         form_three = UpdateBioForms(instance=get_pk.bio_user_relation)
-        context = {'form_two': form_two, 'form_three': form_three, 'get_pk': get_pk}
+        user_form = RegisterForms(instance=get_pk)
+        context = {'form_two': form_two, 'form_three': form_three, 'get_pk': get_pk, 'user_form': user_form}
         return render(request, 'update_user_management.html', context=context)
 
 
@@ -62,7 +72,7 @@ def deactivate_user(request, pk=None):
         return redirect('user-management')
     get_pk = get_object_or_404(User, pk=pk)
     if request.method == 'POST' or 'GET':
-        if User.objects.get(email__exact=get_pk.email).is_active is not None:
+        if User.objects.get(email__exact=get_pk.email).is_active is True and not None:
             # invalidate_model(User, using=User)
             User.objects.filter(user_pk=get_pk.user_pk).update(is_active=False)
             invalidate_model(User)
@@ -119,11 +129,10 @@ def list_user_request(request, pk=None):
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
     role = request.user.permit_user.get(user_permit_id=get_pk).role_permit
-    print(role)
     if request.user.permit_user.filter(role_permit__role='User'):
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \
-                filter(user_request_id=get_pk).order_by('request_request__request_open')
+                filter(user_request_id=get_pk).order_by('-request_request__request_open').only()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -138,9 +147,9 @@ def list_user_request(request, pk=None):
             pagy = 'No Requests'
         context = {'pagy': pagy}
     # query for admin and it team view
-    elif request.user.permit_user.filter(role_permit__role='Admin').only() or request.user.permit_user.filter(role_permit__role='IT team').only():
+    elif request.user.permit_user.filter(role_permit__role='Admin' or 'IT team').only():
         if user_request_table.objects.all() is not None:
-            request_list = user_request_table.objects.all().order_by('request_request__request_open')
+            request_list = user_request_table.objects.all().order_by('-request_request__request_open').only()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -173,7 +182,10 @@ def assign_task(request, pk=None):
             # try to invalidate object should work
             invalidate_model(request_table)
             messages.success(request, 'Request has been updated')
-            logging_info_task(msg='Task has been assigned')
+            # send email to user when request has been assigned to a staff
+            send_mail_task_assigned_user(user=get_pk.user_request.pk, assign=post.assigned_to)
+            # log to show date and time of task assigned to an IT staff
+            logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
             return redirect('request')
     else:
         forms = Request_Forms(instance=get_pk.request_request)
