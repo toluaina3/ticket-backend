@@ -20,7 +20,7 @@ class Assign_Forms(forms.ModelForm):
 class Request_Forms(forms.ModelForm):
     class Meta:
         model = request_table
-        exclude = ['request_time_closed', 'request_open']
+        exclude = ['request_time_closed', 'request_open', 'confirm']
 
 
 class Bio_Form(forms.ModelForm):

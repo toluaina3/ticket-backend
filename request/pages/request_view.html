@@ -14,7 +14,7 @@
 <a class="btn btn-primary" style="background: #001952" href="{% url 'request-create' pk=data%}">Create Request</a>
 
 
-{% if messages %}
+<div class="container p-5">{% if messages %}
 {% for message in messages %}
 <div class="alert alert-dark" role="alert">
 {{ message }}
@@ -25,6 +25,8 @@ data-dismiss="alert" aria-label="Close">
 </div>
 {% endfor %}
 {% endif %}
+</div>
+
 
 </div>
 {% endblock %}

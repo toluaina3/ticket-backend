@@ -52,11 +52,16 @@ class response_table(models.Model):
     later_response = models.DateTimeField(auto_now=True)
 
 
+class AutoDateTimeField(models.DateTimeField):
+    def pre_save(self, model_instance, add):
+        return timezone.now()
+
+
 class request_table(models.Model):
     request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
     # create task to send email to IT team
-    request_open = models.DateTimeField(auto_now_add=True, editable=False)
-    request_time_closed = models.DateTimeField(auto_now=True, null=True, editable=False)
+    request_open = models.DateTimeField(null=True)
+    request_time_closed = models.DateTimeField(null=True)
     request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
                         ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
                         ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
@@ -67,6 +72,7 @@ class request_table(models.Model):
     copy_team = models.CharField(max_length=40, blank=True, help_text='Copy team members')
     # view only to IT team
     close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'))
+    confirm = models.BooleanField(default=False)
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
 
     class Meta:
@@ -74,12 +80,12 @@ class request_table(models.Model):
 
     # update the time when the request in close, can be done in view too
     def time_to_close_request(self):
-        if self.close_request == 'Closed' or 'Cancelled':
-           # self.close_request = self.request_time_closed
-            return self.close_request
+        if self.close_request == 'Open':
+            self.request_open = timezone.now()
+            return self.request_open
 
     def save(self, *args, **kwargs):
-        self.request_time_closed = self.time_to_close_request
+        self.time_to_close_request()
         super(request_table, self).save(*args, **kwargs)
 
     def __str__(self):

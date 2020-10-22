@@ -15,5 +15,6 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^request/create/(?P<pk>[-\w\d]+)$', views.requests_user_create, name='request-create'),
         re_path(r'^request/list/(?P<pk>[-\w\d]+)$', views.list_user_request, name='request-list'),
         re_path(r'^request/assign/(?P<pk>[-\w\d]+)$', views.assign_task, name='assign-task'),
+        re_path(r'^request/confirmed/(?P<pk>[-\w\d]+)$', views.user_confirm_request, name='user-confirm'),
 
     ]

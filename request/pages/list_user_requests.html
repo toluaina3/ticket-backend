@@ -51,7 +51,7 @@ data-dismiss="alert" aria-label="Close">
 <td>{{ list.user_request.bio_user_relation.branch }}</td>
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
-<td>{{ list.request_request.close_request }}</td>
+<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
 </tr>
 {% endfor %}
 {% else %}

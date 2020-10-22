@@ -10,8 +10,10 @@ from django.db.models import Q
 from verify.forms import Request_Forms, Assign_Forms, RegisterForms
 from cacheops import invalidate_model, invalidate_obj
 from clean_code.tasks import send_mail_request_raised, \
-    send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user
+    send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
+    send_mail_task_closed_user
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.utils import timezone
 
 
 # Create your views here.
@@ -46,7 +48,8 @@ def update_user_management(request, pk=None):
                                                                      department=post_three.department)
                     permission.objects.filter(Q(user_permit_id=get_pk)).update(role_permit_id=get_role.pk)
                     # update the user's info
-                    User.objects.filter(user_pk=get_pk).update(first_name=first_name, last_name=last_name, email=email)
+                    User.objects.filter(user_pk=get_pk.user_pk).update(first_name=first_name, last_name=last_name,
+                                                                       email=email)
                     messages.success(request, '{}, was successfully Updated'.
                                      format(get_pk.first_name + ' ' + get_pk.last_name))
                     # invalidate the model tables
@@ -178,18 +181,55 @@ def assign_task(request, pk=None):
             request_table.objects.filter(id=get_pk.request_request.pk). \
                 update(assigned_to=post.assigned_to,
                        copy_team=post.copy_team, close_request=post.close_request)
-            # invalidate the model request table not suitable for multiples database calls
-            # try to invalidate object should work
-            invalidate_model(request_table)
-            messages.success(request, 'Request has been updated')
-            # send email to user when request has been assigned to a staff
-            send_mail_task_assigned_user(user=get_pk.user_request.pk, assign=post.assigned_to)
-            # log to show date and time of task assigned to an IT staff
-            logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
-            return redirect('request')
+            # if the request is completed by IT team, send a mail to user to click the confirm button
+            # so the IT team can close the request
+            if post.close_request == 'Completed':
+                send_mail_task_completed_user(user=get_pk.user_request.pk, assign=post.assigned_to)
+                # update the completed time field in the database
+                request_table.objects.filter(id=get_pk.request_request.pk).update(request_time_closed=timezone.now())
+                messages.success(request, 'You completed the request')
+                # log to show date and time of task assigned to an IT staff
+                logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
+                invalidate_model(request_table)
+                return redirect('request')
+            else:
+                # invalidate the model request table not suitable for multiples database calls
+                # try to invalidate object should work
+                invalidate_model(request_table)
+                messages.success(request, 'Request has been updated')
+                # send email to user when request has been assigned to a staff
+                send_mail_task_assigned_user(user=get_pk.user_request.pk, assign=post.assigned_to)
+                # log to show date and time of task assigned to an IT staff
+                logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
+                return redirect('request')
     else:
         forms = Request_Forms(instance=get_pk.request_request)
-        assign = Assign_Forms(request.POST)
         query = request_table.objects.get(id=get_pk.request_request.pk)
+        assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
         context = {'forms': forms, 'assign': assign, 'query': query}
         return render(request, 'assign_task.html', context)
+
+
+def user_confirm_request(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = request_table.objects.get(pk=pk)
+    if request.method == 'POST' or 'GET':
+        # user click confirm button, request updates to close
+        if not request_table.objects.get(id=get_pk.pk).confirm:
+            request_table.objects.filter(id=get_pk.pk)\
+                .update(close_request='Closed', confirm='True')
+            # invalidate the request table
+            invalidate_model(request_table)
+            messages.success(request, 'Your request has been closed')
+            # handled by celery task
+            use = user_request_table.objects.get(request_request_id=get_pk.pk)
+            logging_info_task(msg='Request closed for {}'.format(use.user_request.get_full_name))
+            send_mail_task_closed_user(user=use.user_request.pk)
+            return redirect('request')
+        else:
+            messages.success(request, 'User must confirm before closing the request')
+            return redirect('request')
+
+
+

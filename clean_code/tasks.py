@@ -92,3 +92,32 @@ def send_mail_task_assigned_user(user, assign):
     except ConnectionError:
         logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
 
+
+@app.task
+def send_mail_task_completed_user(user, assign):
+    UserModel = get_user_model()
+    user = UserModel.objects.get(pk=user)
+    subject = "Your request has been completed "
+    email = (' Your request has been completed by {}, kindly click the confirmed button on '
+             'the platform to close out the request. Thank you'.format(assign))
+    try:
+        send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {}'.format(user.email))
+    except BadHeaderError:
+        logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
+    except ConnectionError:
+        logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
+
+@app.task
+def send_mail_task_closed_user(user):
+    UserModel = get_user_model()
+    user = UserModel.objects.get(pk=user)
+    subject = "Your request has been closed "
+    email = ' Your request has been closed, Thank you'
+    try:
+        send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {}'.format(user.email))
+    except BadHeaderError:
+        logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
+    except ConnectionError:
+        logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
