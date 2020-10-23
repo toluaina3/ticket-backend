@@ -1,14 +1,14 @@
-from django.shortcuts import render, redirect, get_list_or_404, get_object_or_404, reverse
+from django.shortcuts import render, redirect, get_object_or_404
 from verify.models import User
 from request.models import permission
 from django.views.generic.list import ListView
 from verify.forms import UpdateBioForms, RoleForm
-from .models import bio, roles_table, user_request_table, request_table
+from .models import bio, roles_table, user_request_table, request_table, sla
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
-from verify.forms import Request_Forms, Assign_Forms, RegisterForms
-from cacheops import invalidate_model, invalidate_obj
+from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form
+from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
     send_mail_task_closed_user
@@ -149,8 +149,9 @@ def list_user_request(request, pk=None):
         else:
             pagy = 'No Requests'
         context = {'pagy': pagy}
+
     # query for admin and it team view
-    elif request.user.permit_user.filter(role_permit__role='Admin' or 'IT team').only():
+    elif request.user.permit_user.filter(role_permit__role='Admin').only():
         if user_request_table.objects.all() is not None:
             request_list = user_request_table.objects.all().order_by('-request_request__request_open').only()
             paginator = Paginator(request_list, 8)
@@ -167,6 +168,25 @@ def list_user_request(request, pk=None):
             pagy = 'No Requests'
             context = {'pagy': pagy}
         return render(request, 'list_user_requests.html', context)
+
+    # view for IT team, only assigned task are seen.
+    elif request.user.permit_user.filter(role_permit__role='IT team').only():
+        if user_request_table.objects.filter(request_request__assigned_to=get_pk) is not None:
+            request_list = user_request_table.objects.filter(
+                request_request__assigned_to=get_pk.first_name + ' ' + get_pk.last_name) \
+                .order_by('-request_request__request_open').only()
+            print(request_list)
+            paginator = Paginator(request_list, 8)
+            page_number = request.GET.get('page')
+            try:
+                pagy = paginator.get_page(page_number)
+            except PageNotAnInteger:
+                pagy = paginator.page(1)
+            except EmptyPage:
+                pagy = paginator.page(paginator.num_pages)
+            context = {'get_pk': get_pk, 'pagy': pagy, 'role': role}
+            return render(request, 'list_user_requests.html', context)
+    messages.error(request, 'Role has not been assigned')
     return render(request, 'list_user_requests.html')
 
 
@@ -217,7 +237,7 @@ def user_confirm_request(request, pk=None):
     if request.method == 'POST' or 'GET':
         # user click confirm button, request updates to close
         if not request_table.objects.get(id=get_pk.pk).confirm:
-            request_table.objects.filter(id=get_pk.pk)\
+            request_table.objects.filter(id=get_pk.pk) \
                 .update(close_request='Closed', confirm='True')
             # invalidate the request table
             invalidate_model(request_table)
@@ -232,4 +252,46 @@ def user_confirm_request(request, pk=None):
             return redirect('request')
 
 
+def sla_create(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    if request.method == 'POST':
+        form = Sla_Form(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            if not sla.objects.filter(sla_category=post.sla_category):
+                post.save()
+                messages.success(request, 'SLA has been updated')
+                return redirect('sla-view')
+        # form will throw error of validation
+        # statement starts from valid
+        messages.error(request, 'SLA service exists')
+        return redirect('sla-create')
+    query = sla.objects.all().order_by('sla_category')
+    paginator = Paginator(query, 8)
+    page_number = request.GET.get('page')
+    try:
+        pagy = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        pagy = paginator.page(1)
+    except EmptyPage:
+        pagy = paginator.page(paginator.num_pages)
+    form = Sla_Form()
+    context = {'form': form, 'pagy': pagy}
+    return render(request, 'sla_create.html', context)
 
+
+def sla_view(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    query = sla.objects.all().order_by('sla_category')
+    paginator = Paginator(query, 8)
+    page_number = request.GET.get('page')
+    try:
+        pagy = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        pagy = paginator.page(1)
+    except EmptyPage:
+        pagy = paginator.page(paginator.num_pages)
+    context = {'query': query, 'pagy': pagy}
+    return render(request, 'sla_view.html', context)

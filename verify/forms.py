@@ -1,8 +1,14 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import forms
 from .models import User
-from request.models import roles_table, bio, request_table
+from request.models import roles_table, bio, request_table, sla
 from django.db.models.query_utils import Q
+
+
+class Sla_Form(forms.ModelForm):
+    class Meta:
+        model = sla
+        fields = ['sla_time', 'sla_category']
 
 
 class Assign_Forms(forms.ModelForm):

@@ -7,7 +7,9 @@ from django.template.loader import render_to_string
 from .celery import app
 from request.models import bio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+from request.models import request_table, sla
+from django.utils import timezone
 
 
 @app.task
@@ -52,6 +54,7 @@ def send_mail_request_raised(user):
     except ConnectionError:
         logging.warning(
             'No internet connection detected when trying to send email to {}'.format(user.get_full_name))
+
 
 # the it support email has been hard coded into the function
 @app.task
@@ -108,6 +111,7 @@ def send_mail_task_completed_user(user, assign):
     except ConnectionError:
         logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
 
+
 @app.task
 def send_mail_task_closed_user(user):
     UserModel = get_user_model()
@@ -121,3 +125,25 @@ def send_mail_task_closed_user(user):
         logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
     except ConnectionError:
         logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
+
+
+@app.task
+def response_time_sla(requester, assign):
+    sla_time = sla.objects.get(id=requester).sla_time
+    request_open_time = request_table.objects.get(id=requester).request_open
+    response_time = request_open_time + timedelta(minutes=sla_time)
+    if timezone.now() > response_time:
+        UserModel = get_user_model()
+        assign = UserModel.objects.get(pk=assign)
+        subject = "Pending request overdue "
+        email = ' A pending request assigned to you is overdue, ensure proper closure. Thank you'
+        try:
+            send_mail(subject, email, 'admin@tikcet.com', [assign.email], fail_silently=False)
+            logging.info('Overdue request Email sent to {}'.format(assign.email))
+        except BadHeaderError:
+            logging.warning('BadHeaderError when trying to send email to {}'.format(assign.get_full_name))
+        except ConnectionError:
+            logging.warning(
+                'No internet connection detected when trying to send email to {}'.format(assign.get_full_name))
+    else:
+        pass

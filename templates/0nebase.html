@@ -33,6 +33,7 @@
                      <div class="dropdown-menu">
                         {% if request.user.is_superuser or request.user.is_staff %}
                         <a class="dropdown-item" href="{% url 'register'  %}">Register Staff</a>
+                            <a class="dropdown-item" href="{% url 'sla-view' %}">SLA</a>
                             <a class="dropdown-item" href="{% url 'user-management' %}">User Management</a>
                         {% endif %}
                         <a class="dropdown-item" href="">Profile</a>
