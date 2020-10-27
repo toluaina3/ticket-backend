@@ -32,7 +32,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', '192.100.0.4']
 INTERNAL_IPS = '127.0.0.1'
 
 # Application definition
@@ -51,12 +51,7 @@ INSTALLED_APPS = [
     'cacheops',
     'debug_toolbar',
     'crispy_forms',
-
-
-
-
-
-
+    'django_celery_beat',
 
 
 ]
@@ -152,6 +147,8 @@ CACHEOPS = {
     'request.permission': {'ops': 'get', 'timeout': 60 * 60 * 24},
     # cache the user request for 1 hour
     'request.user_request_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
+    # cache the sla for 1 hour
+    'request.sla': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
 
 
 }
@@ -169,11 +166,6 @@ SESSION_REDIS = {
 }
 
 
-
-# CELERY STUFF
-task_serialzer = 'json'
-result_serializer = 'json'
-timezone = 'Africa/Lagos'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -224,3 +216,4 @@ EMAIL_HOST_USER = env('EMAIL_HOST')
 EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Ticket by IT Team <noreply@ticket.com>'
+

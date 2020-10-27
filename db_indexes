@@ -5,7 +5,12 @@ CREATE INDEX request_index ON request_request_table(request, request_time_closed
 CREATE INDEX role_index ON request_roles_table(role_id, role)
 CREATE INDEX permission_index ON request_permission(permission_id)
 
-celery -A clean_code worker -l INFO
+
+
+celery -A clean_code worker -l INFO -B -E
+celery -A clean_code beat -l INFO
+# make the celery beat read database from django_celery_worker database
+ celery -A clean_code  beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
 
 

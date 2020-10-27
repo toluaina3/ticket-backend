@@ -1,8 +1,5 @@
 from datetime import datetime, timedelta
 
+a= 'Tolu Aina'
+print(a.split(' ')[1])
 
-t = timedelta(minutes=2)
-a = datetime.now() + t
-# if datetime.now() > a:
-    # send mail
-print(a)

@@ -57,15 +57,26 @@ class AutoDateTimeField(models.DateTimeField):
         return timezone.now()
 
 
+class sla(models.Model):
+    #sla_pk = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    sla_category = models.CharField(max_length=30, blank=False, unique=True)
+    sla_time = models.IntegerField(blank=False)
+
+    class Meta:
+        verbose_name_plural = 'SLA'
+
+    def __str__(self):
+        return self.sla_category
+
+
 class request_table(models.Model):
     request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
     # create task to send email to IT team
     request_open = models.DateTimeField(null=True)
     request_time_closed = models.DateTimeField(null=True)
-    request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
-                        ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
-                        ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
-    category = models.CharField(max_length=20, default='Network', choices=request_category)
+   # request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
+    #                    ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
+     #                   ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
     # not included in the form, auto fills
     # create task to send email to user for assigned request
     assigned_to = models.CharField(max_length=40, blank=True, default='None')
@@ -74,6 +85,7 @@ class request_table(models.Model):
     close = (('Closed', 'Closed'), ('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'))
     confirm = models.BooleanField(default=False)
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
+    sla_category = models.ForeignKey(sla, on_delete=models.CASCADE, related_name='request_sla_request')
 
     class Meta:
         verbose_name_plural = 'Request_table'
@@ -92,22 +104,10 @@ class request_table(models.Model):
         return self.request
 
 
-class sla(models.Model):
-    sla_category = models.CharField(max_length=30, blank=False, unique=True)
-    sla_time = models.IntegerField(blank=False)
-
-    class Meta:
-        verbose_name_plural = 'SLA'
-
-    def __str__(self):
-        return self.sla_category
-
-
 # many to many relation for users to make multiple requests
 class user_request_table(models.Model):
     user_request = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_request_link')
     request_request = models.ForeignKey(request_table, on_delete=models.CASCADE, related_name='request_request_link')
-    sla_request = models.ForeignKey(sla, on_delete=models.CASCADE, related_name='sla_request')
 
     class Meta:
         verbose_name_plural = 'User_request_table'

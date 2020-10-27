@@ -36,7 +36,7 @@ data-dismiss="alert" aria-label="Close">
 {% for list in pagy %}
 <tr>
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
-<td>{{ list.sla_category}}</td>
+<td><a href="{% url 'sla-update' pk=list.pk %}" style="color: black">{{ list.sla_category}}</a></td>
 <td> {{ list.sla_time }}</td>
 </tr>
 {% endfor %}

@@ -1,0 +1,91 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+<title>SLA Update</title>
+{% endblock %}
+
+
+{% block content %}
+<br>
+<div class="container p-5">
+<div class="form-group row">
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="form-group col-md-6 mb-0">
+<table class="table table-hover">
+<thead>
+<tr>
+<th scope="col">#</th>
+<th scope="col">Service</th>
+<th scope="col">Response time(Minutes)</th>
+</tr>
+</thead>
+
+<tbody>
+<br>
+{% for list in pagy %}
+<tr>
+<th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
+<td><a href="{% url 'sla-update' pk=list.pk %}" style="color: black">{{ list.sla_category}}</a></td>
+<td> {{ list.sla_time }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="pagination justify-content-center">
+<span class="step-links border border-light">
+{% if pagy.has_previous %}
+<a class="badge btn-outline-dark" href="?page={{ pagy.previous_page_number }}">Previous</a>
+{% endif %}
+<span class="current badge">
+Page {{ pagy.number }} of {{ pagy.paginator.num_pages }}
+</span>
+{% if pagy.has_next %}
+<a class="badge btn-outline-dark" href="?page={{ pagy.next_page_number }}">Next</a>
+<a class="badge btn-outline-dark" href="?page={{ pagy.paginator.num_pages }}">Last&raquo;</a>
+{% endif %}
+</span>
+</div>
+
+<br>
+<a type="submit" class="btn btn-primary" href="{% url 'sla-create' %}" style="background: #001952">Add Service</a>
+</div>
+
+
+
+
+<div class="form-group col-md-6 mb-0">
+
+<form action="" method="POST">
+<div class="form-row">
+{% csrf_token%}
+<div class="form-group col-md-4 mb-0">
+{{ form.sla_category|as_crispy_field  }}
+</div>
+
+<div class="form-group col-md-2 mb-0">
+{{ form.sla_time|as_crispy_field  }}
+</div>
+
+<div class="form-group col-md-12 mb-0">
+    <br>
+<button type="submit" class="btn btn-primary" style="background: #001952">Update</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+{%  endblock %}

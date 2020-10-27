@@ -18,5 +18,6 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^request/confirmed/(?P<pk>[-\w\d]+)$', views.user_confirm_request, name='user-confirm'),
         re_path(r'^request/sla/create/$', views.sla_create, name='sla-create'),
         re_path(r'^request/sla/view/$', views.sla_view, name='sla-view'),
+        re_path(r'^request/sla/update/(?P<pk>[-\w\d]+)$', views.sla_update, name='sla-update'),
 
     ]

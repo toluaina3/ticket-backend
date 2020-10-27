@@ -7,9 +7,10 @@ from django.template.loader import render_to_string
 from .celery import app
 from request.models import bio
 import logging
-from datetime import datetime, timedelta
-from request.models import request_table, sla
+from datetime import datetime
+from request.models import request_table, sla, user_request_table
 from django.utils import timezone
+from celery import shared_task
 
 
 @app.task
@@ -128,22 +129,43 @@ def send_mail_task_closed_user(user):
 
 
 @app.task
-def response_time_sla(requester, assign):
-    sla_time = sla.objects.get(id=requester).sla_time
-    request_open_time = request_table.objects.get(id=requester).request_open
-    response_time = request_open_time + timedelta(minutes=sla_time)
-    if timezone.now() > response_time:
-        UserModel = get_user_model()
-        assign = UserModel.objects.get(pk=assign)
-        subject = "Pending request overdue "
-        email = ' A pending request assigned to you is overdue, ensure proper closure. Thank you'
-        try:
-            send_mail(subject, email, 'admin@tikcet.com', [assign.email], fail_silently=False)
-            logging.info('Overdue request Email sent to {}'.format(assign.email))
-        except BadHeaderError:
-            logging.warning('BadHeaderError when trying to send email to {}'.format(assign.get_full_name))
-        except ConnectionError:
-            logging.warning(
-                'No internet connection detected when trying to send email to {}'.format(assign.get_full_name))
-    else:
+def response_time_sla():
+    try:
+        query = user_request_table.objects.all()
+        if query is not None:
+            for lists in query:
+                sla_time = user_request_table.objects.get \
+                    (request_request_id=lists.request_request.pk).request_request.sla_category.sla_time
+                if lists.request_request.request_open != 'Cancelled' \
+                        or lists.request_request.close_request != 'Closed':
+                    response_time = lists.request_request.request_open + timezone.timedelta(minutes=sla_time)
+                    # if lists.request_request.close_request =='Open':
+                    if timezone.now() > response_time:
+                        assign = lists.request_request.assigned_to
+                        first = str(assign.split(' ')[0])
+                        UserModel = get_user_model()
+                        try:
+                            user = UserModel.objects.get(first_name=first)
+                            subject = "Pending request overdue "
+                            email = ' A pending request assigned http://127.0.0.1:8000/request/assign/{} ' \
+                                    'to you is overdue, ensure proper closure. ' \
+                                    'Thank you'.format(lists.request_request.pk)
+                            try:
+                                send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+                                logging.info('Overdue request Email sent to {}'.format(user.email))
+                            except BadHeaderError:
+                                logging.warning(
+                                    'BadHeaderError when trying to send email to {}'.format(user.get_full_name))
+                            except ConnectionError:
+                                logging.warning(
+                                    'No internet connection detected when trying to send email to {}'.format(
+                                        user.get_full_name))
+                        # condition if user do not exist
+                        except UserModel.DoesNotExist:
+                            pass
+                # condition if timezone is None on the table
+                else:
+                    pass
+    # condition if sla category is None
+    except sla.DoesNotExist:
         pass

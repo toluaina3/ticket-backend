@@ -7,7 +7,7 @@ from .models import bio, roles_table, user_request_table, request_table, sla
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
-from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form
+from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, Sla_request_Form
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
@@ -107,11 +107,13 @@ def requests_user_create(request, pk=None):
     get_pk = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
         forms = Request_Forms(request.POST)
+        sla_category = Sla_request_Form(request.POST).data['sla_category']
+        print(forms.errors)
         if forms.is_valid():
             post = forms.save(commit=False)
-            post.save()
-            user_request_table.objects.create(user_request_id=get_pk.user_pk, request_request_id=post.id)
-            post.save()
+            get_category = sla.objects.get(sla_category=sla_category)
+            request_add = request_table.objects.create(request=post.request, sla_category=get_category)
+            user_request_table.objects.create(user_request_id=get_pk.user_pk, request_request_id=request_add.pk)
             messages.success(request, 'Request has been Submitted')
             # task of logged message
             logging_info_task(msg='Request raised for the user {}'.format(request.user.get_full_name))
@@ -120,10 +122,13 @@ def requests_user_create(request, pk=None):
             # send mail to the ticket@team when request is raised
             send_mail_request_raised_it_team(user=get_pk.user_pk)
             return redirect('request')
-
+        else:
+            messages.error(request, 'Form is invalid')
+            return redirect('request-create')
     else:
         forms = Request_Forms()
-        context = {'forms': forms, 'get_pk': get_pk}
+        sla_category = Sla_request_Form()
+        context = {'forms': forms, 'get_pk': get_pk, 'sla_category': sla_category}
         return render(request, 'create_request.html', context)
 
 
@@ -222,6 +227,9 @@ def assign_task(request, pk=None):
                 # log to show date and time of task assigned to an IT staff
                 logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
                 return redirect('request')
+        else:
+            messages.error(request, 'Invalid Input')
+            return redirect('assign-task')
     else:
         forms = Request_Forms(instance=get_pk.request_request)
         query = request_table.objects.get(id=get_pk.request_request.pk)
@@ -248,7 +256,7 @@ def user_confirm_request(request, pk=None):
             send_mail_task_closed_user(user=use.user_request.pk)
             return redirect('request')
         else:
-            messages.success(request, 'User must confirm before closing the request')
+            messages.error(request, 'User must confirm before closing the request')
             return redirect('request')
 
 
@@ -261,6 +269,7 @@ def sla_create(request):
             post = form.save(commit=False)
             if not sla.objects.filter(sla_category=post.sla_category):
                 post.save()
+                invalidate_model(sla)
                 messages.success(request, 'SLA has been updated')
                 return redirect('sla-view')
         # form will throw error of validation
@@ -284,7 +293,11 @@ def sla_create(request):
 def sla_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
-    query = sla.objects.all().order_by('sla_category')
+    global query
+    if sla.objects.all() is not None:
+        query = sla.objects.all().order_by('sla_category')
+    elif sla.objects.all is None:
+        messages.error(request, 'No service added')
     paginator = Paginator(query, 8)
     page_number = request.GET.get('page')
     try:
@@ -295,3 +308,31 @@ def sla_view(request):
         pagy = paginator.page(paginator.num_pages)
     context = {'query': query, 'pagy': pagy}
     return render(request, 'sla_view.html', context)
+
+
+def sla_update(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = get_object_or_404(sla, pk=pk)
+    if request.method == 'POST':
+        sla_category = request.POST['sla_category']
+        sla_time = request.POST['sla_time']
+        if sla.objects.filter(sla_category=sla_category):
+            sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time)
+            messages.success(request, 'SLA has been updated')
+            invalidate_model(sla)
+            return redirect('sla-view')
+        messages.error(request, 'Can not update service')
+        return redirect('sla-view')
+    query = sla.objects.all().order_by('sla_category')
+    paginator = Paginator(query, 8)
+    page_number = request.GET.get('page')
+    try:
+        pagy = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        pagy = paginator.page(1)
+    except EmptyPage:
+        pagy = paginator.page(paginator.num_pages)
+    form = Sla_Form(instance=get_pk)
+    context = {'form': form, 'pagy': pagy}
+    return render(request, 'sla_update.html', context)

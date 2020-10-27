@@ -3,6 +3,17 @@ from django.contrib.auth.forms import forms
 from .models import User
 from request.models import roles_table, bio, request_table, sla
 from django.db.models.query_utils import Q
+from cacheops import invalidate_model
+
+
+class Sla_request_Form(forms.ModelForm):
+    invalidate_model(sla)
+    choice = [(sla.sla_category, sla.sla_category) for sla in (sla.objects.all().order_by('sla_category').only())]
+    sla_category = forms.ChoiceField(choices=choice, required=True)
+
+    class Meta:
+        model = sla
+        fields = ['sla_category']
 
 
 class Sla_Form(forms.ModelForm):
@@ -14,7 +25,8 @@ class Sla_Form(forms.ModelForm):
 class Assign_Forms(forms.ModelForm):
     # get the it team from query into the choice field
     choices = [(user.first_name + ' ' + user.last_name, user.get_full_name)
-               for user in (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
+               for user in
+               (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
     assigned_to = forms.ChoiceField(choices=choices, required=False)
     copy_team = forms.ChoiceField(choices=choices, required=False)
 
@@ -26,7 +38,7 @@ class Assign_Forms(forms.ModelForm):
 class Request_Forms(forms.ModelForm):
     class Meta:
         model = request_table
-        exclude = ['request_time_closed', 'request_open', 'confirm']
+        exclude = ['request_time_closed', 'request_open', 'confirm', 'sla_category']
 
 
 class Bio_Form(forms.ModelForm):

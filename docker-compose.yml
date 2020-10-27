@@ -5,8 +5,6 @@ services:
       #context: . #build the django web from docker file in the base directory
       #dockerfile: Dockerfile-alternate 
       container_name: cleancode_django_app
-      command: >
-        sh -c "python manage.py runserver"
       networks:
        vpcbr:
          ipv4_address: 192.100.0.4
@@ -52,10 +50,42 @@ services:
           ipv4_address: 192.100.0.6
       restart: on-failure
 
+    celery:
+      build: .
+      command: celery -A clean_code worker -l INFO
+      volumes:
+      - celery.worker:/usr/src/app/
+      links:
+        - redis-cache
+      container_name: celery-worker
+      depends_on:
+        - db
+        - redis-cache
+      networks:
+        vpcbr:
+          ipv4_address: 192.100.0.7
+
+    celery-beat:
+      build: .
+      command:  celery -A clean_code  beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      volumes:
+      - celery.beat:/usr/src/app/
+      links:
+        - redis-cache
+      container_name:  celery-beat
+      depends_on:
+        - db
+        - redis-cache
+      networks:
+        vpcbr:
+          ipv4_address: 192.100.0.8
+
       
 volumes: 
   postgres.data:
   redis-data:
+  celery.worker:
+  celery.beat:
 networks:
   vpcbr:
     driver: bridge

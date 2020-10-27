@@ -20,13 +20,29 @@
 <br>
 <form action="" method="POST">
 {% csrf_token %}
+
+
+<div class="form-group col-md-6 mb-0">
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-dark" role="alert">
+{{ message }}
+<button type="button" class="close"
+data-dismiss="alert" aria-label="Close">
+<span aria-hidden="true">&times;</span>
+</button>
+</div>
+{% endfor %}
+{% endif %}
+</div>
+
 <div class="form-row">
 <div class="form-group col-md-6 mb-0">
 {{ forms.request|as_crispy_field }}
 </div>
 
 <div class="form-group col-md-2 mb-0">
-{{ forms.category|as_crispy_field }}
+{{ sla_category|crispy }}
 </div>
 
 <div class="form-group col-md-6 mb-0">
@@ -35,6 +51,7 @@
 </div>
 </form>
 </div>
+
 
 
 

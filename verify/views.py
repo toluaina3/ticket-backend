@@ -43,7 +43,7 @@ def login_view(request):
     return render(request, 'index.html', context)
 
 
-#@cached_view(timeout=120)
+
 def login_home(request):
     # return only database value, for database optimization
     if bio.objects.filter(bio_user=request.user.pk):
