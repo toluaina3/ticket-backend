@@ -10,7 +10,6 @@ import logging
 from datetime import datetime
 from request.models import request_table, sla, user_request_table
 from django.utils import timezone
-from celery import shared_task
 
 
 @app.task
@@ -129,6 +128,21 @@ def send_mail_task_closed_user(user):
 
 
 @app.task
+def send_mail_task_cancelled_request(user):
+    UserModel = get_user_model()
+    user = UserModel.objects.get(pk=user)
+    subject = "Your request has been cancelled "
+    email = ' Your request has been been cancelled, contact IT for more clarification. Thank you'
+    try:
+        send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {} for request cancellation'.format(user.email))
+    except BadHeaderError:
+        logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
+    except ConnectionError:
+        logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
+
+
+@app.task
 def response_time_sla():
     try:
         query = user_request_table.objects.all()
@@ -136,8 +150,8 @@ def response_time_sla():
             for lists in query:
                 sla_time = user_request_table.objects.get \
                     (request_request_id=lists.request_request.pk).request_request.sla_category.sla_time
-                if lists.request_request.request_open != 'Cancelled' \
-                        or lists.request_request.close_request != 'Closed':
+                if lists.request_request.request_open is not None \
+                        or lists.request_request.close_request == 'Open':
                     response_time = lists.request_request.request_open + timezone.timedelta(minutes=sla_time)
                     # if lists.request_request.close_request =='Open':
                     if timezone.now() > response_time:

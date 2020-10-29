@@ -11,9 +11,10 @@ from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, S
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
-    send_mail_task_closed_user
+    send_mail_task_closed_user, send_mail_task_cancelled_request
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
+from django.db.models import Q
 
 
 # Create your views here.
@@ -180,7 +181,6 @@ def list_user_request(request, pk=None):
             request_list = user_request_table.objects.filter(
                 request_request__assigned_to=get_pk.first_name + ' ' + get_pk.last_name) \
                 .order_by('-request_request__request_open').only()
-            print(request_list)
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -217,6 +217,14 @@ def assign_task(request, pk=None):
                 logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
                 invalidate_model(request_table)
                 return redirect('request')
+            elif post.close_request == 'Cancelled':
+                request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .update(close_request='Cancelled')
+                send_mail_task_cancelled_request(user=get_pk.user_request.pk)
+                messages.success(request, 'The request has been cancelled, user has been notified')
+                invalidate_model(request_table)
+                return redirect('request')
+
             else:
                 # invalidate the model request table not suitable for multiples database calls
                 # try to invalidate object should work
@@ -336,3 +344,32 @@ def sla_update(request, pk=None):
     form = Sla_Form(instance=get_pk)
     context = {'form': form, 'pagy': pagy}
     return render(request, 'sla_update.html', context)
+
+
+def search_request_list_query(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    # the search query
+    search_field = request.GET.get('search')
+    if str(search_field):
+        query_search = user_request_table.objects.filter(Q(request_request__request__icontains=search_field) |
+                                                         Q(request_request__request__exact=search_field)
+                                                         | Q(user_request__first_name__icontains=search_field)
+                                                         | Q(user_request__first_name__exact=search_field)
+                                                         | Q(user_request__last_name__icontains=search_field)
+                                                         | Q(user_request__last_name__exact=search_field)
+                                                         | Q(request_request__assigned_to__icontains=search_field)
+                                                         | Q(request_request__assigned_to__exact=search_field)) \
+            .order_by('request_request__request_open')
+        paginator = Paginator(query_search, 8)
+        page_number = request.GET.get('page')
+        try:
+            pagy = paginator.get_page(page_number)
+        except PageNotAnInteger:
+            pagy = paginator.page(1)
+        except EmptyPage:
+            pagy = paginator.page(paginator.num_pages)
+        context = {'pagy': pagy}
+        return render(request, 'search_request_query.html', context)
+    messages.error(request, 'Data not found')
+    return redirect('request-list')

@@ -69,11 +69,11 @@ var ctxB = document.getElementById("barChart").getContext('2d');
 var myBarChart = new Chart(ctxB, {
 type: 'bar',
 data: {
-labels: ["Open", "Closed", "Cancelled"],
+labels: ["Open", "Completed", "Closed", "Cancelled"],
 datasets: [{
 label: 'Number of Requests',
 
-data: [{{ open_feed }}, {{ close }}, {{ cancelled }}],
+data: [{{ request_open }}, {{ request_completed }}, {{ request_closed }}, {{ request_cancelled }}],
 
 backgroundColor: [
 'rgba(85,118,241,0.62)',
@@ -131,7 +131,9 @@ $(function() {
 
 
 
-<!--Line chart code-->
+
+
+<!--Second chart code-->
 <style>
 .stick-to-righty {
     width: 450px;
@@ -140,11 +142,81 @@ $(function() {
 }
 </style>
 
+
 <div class="col-sm-4 card stick-to-righty" style="box-shadow: 1px 1px 5px #b3b3b3">
-<canvas id="lineChart"></canvas>
-<p style="text-align: center" class="badge">No of Monthly Sales: {{ sales_month_data_in }}</p>
-    <p style="text-align: center" class="badge">Cost of Monthly Sales: <strong>&#x20A6;{{ cost_month_data_in|intcomma }}</strong></p>
+<canvas id="bar" width="200" height="100"></canvas>
+    <div><form method="GET"><input type="text" name="date" class="ui-datepicker"   />
+<button class="btn btn-outline-amber btn-sm " type="submit">Filter</button>
+</form></div>
 </div>
+
+<script type="text/javascript">
+var ctxB = document.getElementById("bar").getContext('2d');
+var myBarChart = new Chart(ctxB, {
+type: 'bar',
+data: {
+labels: ["Email", "Software", "Authentication", "Network"],
+datasets: [{
+label: 'Requests per Categories',
+
+data: [{{ request_email }}, {{ request_software }}, {{ request_authentication }}, {{ request_network }}],
+
+backgroundColor: [
+'rgb(153,133,67)',
+'rgb(38,205,248)',
+'rgba(246,40,48,0.2)',
+'rgba(56,219,94,0.2)',
+'rgba(66,146,86,0.2)',
+'rgb(142,5,115)',
+],
+borderColor: [
+'rgb(197,236,89)',
+'rgb(30,124,165)',
+'rgb(238,36,36)',
+'rgb(10,239,24)',
+'rgb(53,149,120)',
+'rgb(239,10,182)',
+
+],
+borderWidth: 1
+}]
+},
+options: {
+scales: {
+yAxes: [{
+ticks: {
+beginAtZero: true
+}
+}]
+}
+}
+});
+</script>
+
+
+
+<!--Date Range Picker-->
+<style type = "text/css">
+.ui-datepicker { font-size:9pt !important}
+</style>
+<script>
+$(function() {
+  $('input[name="date"]').daterangepicker({
+    opens: 'right',
+       drops: 'auto',
+      locale:{
+     format: 'YYYY-MM-DD'},
+  }, function(start, end, label) {
+    console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+  });
+});
+</script>
+
+
+
+
+
+
 
 <!-- Doghnut Chart-->
 
@@ -169,15 +241,15 @@ $(function() {
 <div class="col-sm-4 stick-to-sales">
 <br>
 <div class="card bg-light mb-3" style="max-width: 15rem; box-shadow: 1px 1px 5px grey;max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc; "><strong>DAILY SALES</strong> </div>
+<div class="card-header" style="background: #17cefc; "><strong>DAILY REQUESTS</strong> </div>
 <div class="card-body">
-<h5 class="card-title" style="font-size: medium;"><strong>&#x20A6;{{ sales_daily_out|intcomma }}
+<h5 class="card-title" style="font-size: medium;"><strong>{{ sales_daily_out|intcomma }}
     <a>{% if sales_daily_out > previous_daily_out %}
         <a style="color: green; margin: 10px;"> &uarr;{{ math_percentage }}</a>
     {% else %}<a style="color: red; margin: 10px;"> &darr;{{ math_percentage }}</a>
     {% endif %}</a></strong></h5>
     <p style="font-size: small; color: grey">Previous</p>
-<h5 class="card-title" style="font-size: medium; color: grey"><strong>&#x20A6;{{ previous_daily_out|intcomma }}</strong></h5>
+<h5 class="card-title" style="font-size: medium; color: grey"><strong>&{{ previous_daily_out|intcomma }}</strong></h5>
 </div>
 </div>
 </div>
@@ -197,7 +269,7 @@ $(function() {
 <div class="col-sm-4" >
 <br>
 <div class="card bg-light" style="max-width: 15rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc;"><strong>DAILY CLOSED ORDERS</strong> </div>
+<div class="card-header" style="background: #17cefc;"><strong>DAILY CLOSED REQUESTS</strong> </div>
 <div class="card-body">
 <h5 class="card-title" style=" font-size: medium"><strong>{{ sales_count_daily }} <a>{% if sales_count_daily > previous_sale_out %}
         <a style="color: green; margin: 10px;"> &uarr;{{ sale_percentage }}</a>
@@ -215,14 +287,14 @@ $(function() {
 <div class="col-sm-4" >
 <br>
 <div class="card bg-light" style="max-width: 15rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc;"><strong>MONTHLY SALES</strong> </div>
+<div class="card-header" style="background: #17cefc;"><strong>MONTHLY REQUESTS</strong> </div>
 <div class="card-body">
-<h5 class="card-title" style=" font-size: medium"><strong>&#x20A6;{{ monthly_cost_sales_out|intcomma }}<a>{% if monthly_cost_sales_out > previous_monthly_cost_data %}
+<h5 class="card-title" style=" font-size: medium"><strong>{{ monthly_cost_sales_out|intcomma }}<a>{% if monthly_cost_sales_out > previous_monthly_cost_data %}
         <a style="color: green; margin: 10px;"> &uarr;{{ monthly_cost_percentage }}</a>
     {% else %}<a style="color: red; margin: 10px;"> &darr;{{ monthly_cost_percentage }}</a>
     {% endif %}</a></strong></h5>
 <p style="font-size: small; color: grey">Previous</p>
-<h5 class="card-title" style=" font-size: medium;  color: grey"><strong>&#x20A6;{{ previous_monthly_cost_data|intcomma }}</strong></h5>
+<h5 class="card-title" style=" font-size: medium;  color: grey"><strong>{{ previous_monthly_cost_data|intcomma }}</strong></h5>
 </div>
 </div>
 </div>
@@ -235,58 +307,6 @@ $(function() {
 
 
 
-<!-- Script for Line Charts-->
-<script>
-var ctxL = document.getElementById("lineChart").getContext('2d');
-var myLineChart = new Chart(ctxL, {
-type: 'line',
-data: {
-labels: ['{{ date_generate.0 }}','{{ date_generate.1 }}', '{{ date_generate.2 }}', '{{ date_generate.3 }}', '{{ date_generate.4 }}',
-'{{ date_generate.5 }}','{{ date_generate.6 }}', '{{ date_generate.7 }}', '{{ date_generate.8 }}', '{{ date_generate.9 }}',
-'{{ date_generate.10 }}','{{ date_generate.11 }}', '{{ date_generate.12 }}', '{{ date_generate.13 }}', '{{ date_generate.14 }}',
-'{{ date_generate.15 }}','{{ date_generate.16 }}', '{{ date_generate.17 }}', '{{ date_generate.18 }}', '{{ date_generate.19 }}',
-'{{ date_generate.20 }}','{{ date_generate.21 }}', '{{ date_generate.22 }}', '{{ date_generate.23 }}', '{{ date_generate.24 }}',
-'{{ date_generate.25 }}','{{ date_generate.26 }}', '{{ date_generate.27 }}', '{{ date_generate.28 }}', '{{ date_generate.29 }}',
-    '{{ date_generate.30 }}'],
-datasets: [{
-label: "Number of Sales",
-data: [{{ iterate_day.0}}, {{ iterate_day.1}}, {{ iterate_day.2}}, {{ iterate_day.3}}, {{ iterate_day.4}},
-        {{ iterate_day.5}}, {{ iterate_day.6}}, {{ iterate_day.7}}, {{ iterate_day.8}}, {{ iterate_day.9}},
-        {{ iterate_day.10}}, {{ iterate_day.11}}, {{ iterate_day.12}}, {{ iterate_day.13}}, {{ iterate_day.14}},
-        {{ iterate_day.15}}, {{ iterate_day.16}}, {{ iterate_day.17}}, {{ iterate_day.18}}, {{ iterate_day.19}},
-        {{ iterate_day.20}}, {{ iterate_day.21}}, {{ iterate_day.22}}, {{ iterate_day.23}}, {{ iterate_day.24}},
-        {{ iterate_day.25}}, {{ iterate_day.26}}, {{ iterate_day.27}}, {{ iterate_day.28}}, {{ iterate_day.29}}, {{ iterate_day.30 }} ],
-backgroundColor: [
-'rgb(248,183,182)',
-],
-borderColor: [
-'rgb(238,66,66)',
-],
-borderWidth: 2
-},
-{
-label: "Cost of Sales",
-data: [{{ iterate_cost.0}}, {{ iterate_cost.1}}, {{ iterate_cost.2}}, {{ iterate_cost.3}}, {{ iterate_cost.4}},
-        {{ iterate_cost.5}}, {{ iterate_cost.6}}, {{ iterate_cost.7}}, {{ iterate_cost.8}}, {{ iterate_cost.9}},
-        {{ iterate_cost.10}}, {{ iterate_cost.11}}, {{ iterate_cost.12}}, {{ iterate_cost.13}}, {{ iterate_cost.14}},
-        {{ iterate_cost.15}}, {{ iterate_cost.16}}, {{ iterate_cost.17}}, {{ iterate_cost.18}}, {{ iterate_cost.19}},
-        {{ iterate_cost.20}}, {{ iterate_cost.21}}, {{ iterate_cost.22}}, {{ iterate_cost.23}}, {{ iterate_cost.24}},
-        {{ iterate_cost.25}}, {{ iterate_cost.26}}, {{ iterate_cost.27}}, {{ iterate_cost.28}}, {{ iterate_cost.29}}, {{ iterate_cost.30 }} ],
-backgroundColor: [
-'rgba(0,137,132,0.2)',
-],
-borderColor: [
-'rgba(0, 10, 130, .7)',
-],
-borderWidth: 2
-}
-]
-},
-options: {
-responsive: true
-}
-});
-    </script>
 
 
 <script>
@@ -295,9 +315,9 @@ var ctxD = document.getElementById("doughnutChart").getContext('2d');
 var myLineChart = new Chart(ctxD, {
 type: 'doughnut',
 data: {
-labels: ["In Stock", "Out of Stock"],
+labels: ["Open Requests", "Closed Requests"],
 datasets: [{
-data: [{{ in_stock }}, {{ in_stock_out }}],
+data: [{{ request_open }}, {{ request_closed }}],
 backgroundColor: ["#797878", "#17cefc"],
 hoverBackgroundColor: ["#797878", "#17cefc"]
 }]

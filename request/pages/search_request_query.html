@@ -10,8 +10,6 @@
 {% block content %}
 <div class="">
 <br>
-<button type="submit" class="btn btn-primary" style="background: #001952">View Requests</button>
-<a class="btn btn-primary" style="background: #001952" href="{% url 'request-create' pk=get_pk.user_pk%}">Create Request</a>
 <br>
 <div class="container p-5">
 {% if messages %}
@@ -29,7 +27,7 @@ data-dismiss="alert" aria-label="Close">
 <div class="col-sm-4 ml-md-auto">
 <nav >
 <form class="form-inline"  method="GET" action="{% url 'request-search' %}">
-    {% csrf_token %}
+{% csrf_token %}
 <input class="form-control mr-sm-2 font-small" type="search" value="{{ request.GET.search }}" placeholder="Search" aria-label="Search" name="search" required>
 <button class="btn btn-outline-success btn-sm" type="submit">Search</button>
 </form>
@@ -62,8 +60,7 @@ data-dismiss="alert" aria-label="Close">
 <td>{{ list.user_request.bio_user_relation.branch }}</td>
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
-<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role.role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
-</tr>
+<td>{{ list.request_request.close_request }}
 {% endfor %}
 {% else %}
 {{ pagy }}
@@ -72,18 +69,17 @@ data-dismiss="alert" aria-label="Close">
 </table>
 </div>
 
-
 <div class="pagination justify-content-center">
-<span class="step-links border border-light">
+<span class="step-links">
 {% if pagy.has_previous %}
-<a class="badge btn-outline-dark" href="?page={{ pagy.previous_page_number }}">Previous</a>
+<a class="badge btn-outline-dark" href="?search=?page={{ pagy.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
 {% endif %}
-<span class="current badge">
+<span class="current">
 Page {{ pagy.number }} of {{ pagy.paginator.num_pages }}
 </span>
 {% if pagy.has_next %}
-<a class="badge btn-outline-dark" href="?page={{ pagy.next_page_number }}">Next</a>
-<a class="badge btn-outline-dark" href="?page={{ pagy.paginator.num_pages }}">Last&raquo;</a>
+<a class="badge btn-outline-dark" href="?page={{ pagy.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+<a class="badge btn-outline-dark" href="?page={{ pagy.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Last&raquo;</a>
 {% endif %}
 </span>
 </div>

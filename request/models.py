@@ -74,9 +74,6 @@ class request_table(models.Model):
     # create task to send email to IT team
     request_open = models.DateTimeField(null=True)
     request_time_closed = models.DateTimeField(null=True)
-   # request_category = (('Network', 'Network'), ('Email', 'Email'), ('Printer', 'Printer'),
-    #                    ('IP Phone', 'IP Phone'), ('Hardware', 'Hardware'), ('Software', 'Software'),
-     #                   ('Wireless', 'Wireless'), ('Authentication', 'Authentication'), ('Other', 'Other'))
     # not included in the form, auto fills
     # create task to send email to user for assigned request
     assigned_to = models.CharField(max_length=40, blank=True, default='None')

@@ -30,9 +30,15 @@ data-dismiss="alert" aria-label="Close">
 {% for field in user_form %}
 {% endfor %}
 {% endif %}
-<div class=" list-group-item-action list-group-item  card-columns col-sm-8">
-<p>{{ query }}</p>
-</div>
+
+
+
+    <div class="card">
+      <div class="card-body">
+        <p class="card-text">{{ query }}</p>
+      </div>
+    </div>
+
 <div class="form-row">
 
 {% if query.close_request == 'Open' %}
