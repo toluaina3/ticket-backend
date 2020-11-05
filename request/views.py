@@ -106,6 +106,7 @@ def requests_user_create(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
+    global overdue_request
     if request.method == 'POST':
         forms = Request_Forms(request.POST)
         sla_category = Sla_request_Form(request.POST).data['sla_category']
@@ -134,10 +135,12 @@ def requests_user_create(request, pk=None):
 
 
 def list_user_request(request, pk=None):
+    global overdue_request
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
     role = request.user.permit_user.get(user_permit_id=get_pk).role_permit
+
     if request.user.permit_user.filter(role_permit__role='User'):
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \
@@ -158,6 +161,22 @@ def list_user_request(request, pk=None):
 
     # query for admin and it team view
     elif request.user.permit_user.filter(role_permit__role='Admin').only():
+        # color code the overdue request on the view table
+        overdue_time = request_table.objects.all()
+        if overdue_time is not None:
+            for listing in overdue_time:
+                get_time = listing.request_open + timezone.timedelta(minutes=listing.sla_category.sla_time)
+                # show the overdue request with color code on the view table
+                if timezone.now() > get_time:
+                    overdue_request = timezone.now() > get_time
+                    print(overdue_request)
+                # show the request with color code on the view table
+                else:
+                    overdue_request = False
+                    print(overdue_request)
+        else:
+            pass
+
         if user_request_table.objects.all() is not None:
             request_list = user_request_table.objects.all().order_by('-request_request__request_open').only()
             paginator = Paginator(request_list, 8)
@@ -172,7 +191,7 @@ def list_user_request(request, pk=None):
             return render(request, 'list_user_requests.html', context)
         else:
             pagy = 'No Requests'
-            context = {'pagy': pagy}
+            context = {'pagy': pagy, 'overdue_request': overdue_request}
         return render(request, 'list_user_requests.html', context)
 
     # view for IT team, only assigned task are seen.
@@ -346,12 +365,30 @@ def sla_update(request, pk=None):
     return render(request, 'sla_update.html', context)
 
 
+def sla_delete(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = get_object_or_404(sla, pk=pk)
+    if request.method == 'POST' or 'GET':
+        if sla.objects.filter(id=get_pk.pk) is not None:
+            # delete the sla record
+            sla.objects.get(id=get_pk.pk).delete()
+            invalidate_model(sla)
+            messages.success(request, 'Service has been deleted')
+            return redirect('sla-view')
+        else:
+            messages.error(request, 'Your request can not be processed, contact Admin')
+            return redirect('sla-view')
+    messages.error(request, 'Can not POST request')
+    return redirect('sla-view')
+
+
 def search_request_list_query(request):
     if not request.user.is_authenticated:
         return redirect('login')
     # the search query
     search_field = request.GET.get('search')
-    if str(search_field):
+    if str(search_field) is not None:
         query_search = user_request_table.objects.filter(Q(request_request__request__icontains=search_field) |
                                                          Q(request_request__request__exact=search_field)
                                                          | Q(user_request__first_name__icontains=search_field)
@@ -359,8 +396,11 @@ def search_request_list_query(request):
                                                          | Q(user_request__last_name__icontains=search_field)
                                                          | Q(user_request__last_name__exact=search_field)
                                                          | Q(request_request__assigned_to__icontains=search_field)
-                                                         | Q(request_request__assigned_to__exact=search_field)) \
-            .order_by('request_request__request_open')
+                                                         | Q(request_request__assigned_to__exact=search_field)
+                                                         | Q(request_request__sla_category__sla_category__exact=search_field)
+                                                         | Q(request_request__sla_category__sla_category__icontains=search_field)
+                                                         | Q(request_request__close_request__icontains=search_field)) \
+            .order_by('-request_request__request_open')
         paginator = Paginator(query_search, 8)
         page_number = request.GET.get('page')
         try:

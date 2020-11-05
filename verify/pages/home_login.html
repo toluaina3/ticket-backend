@@ -155,23 +155,24 @@ var ctxB = document.getElementById("bar").getContext('2d');
 var myBarChart = new Chart(ctxB, {
 type: 'bar',
 data: {
-labels: ["Email", "Software", "Authentication", "Network"],
+labels: ["Email", "Software", "Authentication", "Network", "IP Phone", "Printer"],
 datasets: [{
-label: 'Requests per Categories',
+label: 'Requests per Service',
 
-data: [{{ request_email }}, {{ request_software }}, {{ request_authentication }}, {{ request_network }}],
+data: [{{ request_email }}, {{ request_software }}, {{ request_authentication }},
+    {{ request_network }}, {{ request_phone }}, {{ request_printer }}],
 
 backgroundColor: [
-'rgb(153,133,67)',
-'rgb(38,205,248)',
+'rgba(85,118,241,0.62)',
+'rgba(241,193,18,0.2)',
 'rgba(246,40,48,0.2)',
 'rgba(56,219,94,0.2)',
 'rgba(66,146,86,0.2)',
 'rgb(142,5,115)',
 ],
 borderColor: [
-'rgb(197,236,89)',
-'rgb(30,124,165)',
+'rgb(34,85,238)',
+'rgb(239,171,20)',
 'rgb(238,36,36)',
 'rgb(10,239,24)',
 'rgb(53,149,120)',
@@ -315,10 +316,12 @@ var ctxD = document.getElementById("doughnutChart").getContext('2d');
 var myLineChart = new Chart(ctxD, {
 type: 'doughnut',
 data: {
-labels: ["Open Requests", "Closed Requests"],
+labels: ["Lagos", "Abuja", "Ikoyi", "PH"],
 datasets: [{
-data: [{{ request_open }}, {{ request_closed }}],
-backgroundColor: ["#797878", "#17cefc"],
+data: [{{ request_location_lagos }}, {{ request_location_abuja }},
+    {{ request_location_ikoyi }}, {{ request_location_ph }}
+    ],
+backgroundColor: ["#797878", "#17cefc","#e27e7e" ],
 hoverBackgroundColor: ["#797878", "#17cefc"]
 }]
 },

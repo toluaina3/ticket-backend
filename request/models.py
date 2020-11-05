@@ -61,6 +61,7 @@ class sla(models.Model):
     #sla_pk = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     sla_category = models.CharField(max_length=30, blank=False, unique=True)
     sla_time = models.IntegerField(blank=False)
+    #sla_status = models.CharField(max_length=10, blank=False, default=True)
 
     class Meta:
         verbose_name_plural = 'SLA'

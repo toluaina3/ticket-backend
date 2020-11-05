@@ -54,6 +54,7 @@ data-dismiss="alert" aria-label="Close">
 </thead>
 <tbody>
 {% for list in pagy %}
+
 <tr>
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.request_request.request_open }}</td>
@@ -71,7 +72,6 @@ data-dismiss="alert" aria-label="Close">
 </tbody>
 </table>
 </div>
-
 
 <div class="pagination justify-content-center">
 <span class="step-links border border-light">

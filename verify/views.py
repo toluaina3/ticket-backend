@@ -49,7 +49,10 @@ def login_home(request):
     global request_open, request_closed, \
         request_completed, request_cancelled, \
         request_software, request_network, \
-        request_authentication, request_email
+        request_authentication, request_email, \
+        request_phone, request_printer, request_location_abuja, \
+        request_location_ikoyi, request_location_lagos, \
+        request_location_ph
 
     # variables for date range picker
     date = request.GET.get('daterange')
@@ -168,11 +171,23 @@ def login_home(request):
             elif search_filler('Software', query_no_date) is None:
                 request_software = 0
 
+            if search_filler('Printer', query_no_date):
+                dell = search_filler('Printer', query_no_date)
+                request_printer = dell['count_request_category']
+            elif search_filler('Printer', query_no_date) is None:
+                request_printer = 0
+
+            if search_filler('IP Phone', query_no_date):
+                dell = search_filler('IP Phone', query_no_date)
+                request_phone = dell['count_request_category']
+            elif search_filler('IP Phone', query_no_date) is None:
+                request_phone = 0
+
         # request category if the date is entered
 
         elif date_category:
-            query_no_date = user_request_table.objects.filter\
-                (request_request__request_open__range=[ren_category, den_category])\
+            query_no_date = user_request_table.objects.filter \
+                (request_request__request_open__range=[ren_category, den_category]) \
                 .values('request_request__sla_category__sla_category') \
                 .annotate(count_request_category=Count('request_request__sla_category__sla_category'))
 
@@ -205,6 +220,53 @@ def login_home(request):
             elif search_filler('Software', query_no_date) is None:
                 request_software = 0
 
+            if search_filler('Printer', query_no_date):
+                dell = search_filler('Printer', query_no_date)
+                request_printer = dell['count_request_category']
+            elif search_filler('Printer', query_no_date) is None:
+                request_printer = 0
+
+            if search_filler('IP Phone', query_no_date):
+                dell = search_filler('IP Phone', query_no_date)
+                request_phone = dell['count_request_category']
+            elif search_filler('IP Phone', query_no_date) is None:
+                request_phone = 0
+
+        # total number of requests per regions
+        query_requests_regions = User.objects.values('bio_user_relation__branch') \
+            .annotate(count_request_location=Count('bio_user_relation__branch'))
+        if query_requests_regions is not None:
+
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['bio_user_relation__branch'] == value:
+                        return key
+
+            if search_filler('Abuja', query_requests_regions):
+                dell = search_filler('Abuja', query_requests_regions)
+                request_location_abuja = dell['count_request_location']
+            elif search_filler('Abuja', query_requests_regions) is None:
+                request_location_abuja = 0
+
+            if search_filler('Lagos', query_requests_regions):
+                dell = search_filler('Lagos', query_requests_regions)
+                request_location_lagos = dell['count_request_location']
+            elif search_filler('Lagos', query_requests_regions) is None:
+                request_location_lagos = 0
+
+            if search_filler('Ikoyi', query_requests_regions):
+                dell = search_filler('Ikoyi', query_requests_regions)
+                request_location_ikoyi = dell['count_request_location']
+            elif search_filler('Ikoyi', query_requests_regions) is None:
+                request_location_ikoyi = 0
+
+            if search_filler('Port-Harcourt', query_requests_regions):
+                dell = search_filler('Port-Harcourt', query_requests_regions)
+                request_location_ph = dell['count_request_location']
+            elif search_filler('Port-Harcourt', query_requests_regions) is None:
+                request_location_ph = 0
+        else:
+            pass
 
     # return only database value, for database optimization
     if bio.objects.filter(bio_user=request.user.pk):
@@ -221,7 +283,12 @@ def login_home(request):
                'request_email': request_email,
                'request_authentication': request_authentication,
                'request_software': request_software,
-               'request_network': request_network}
+               'request_network': request_network,
+               'request_printer': request_printer,
+               'request_phone': request_phone, 'request_location_abuja': request_location_abuja,
+               'request_location_ikoyi': request_location_ikoyi,
+               'request_location_lagos': request_location_lagos,
+               'request_location_ph': request_location_ph}
     return render(request, 'home_login.html', context)
 
 
