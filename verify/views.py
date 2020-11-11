@@ -7,9 +7,10 @@ from .forms import RegisterForms, RoleForm, Bio_Form
 from django.db import transaction, IntegrityError
 from cacheops import cached_view
 from django.contrib.auth.forms import PasswordResetForm
-from django.db.models.query_utils import Q
 from clean_code.tasks import send_mail_password_reset
 from django.db.models import Count
+from .forms import Assign_Forms
+from django.db.models import Q
 
 
 # Create your views here.
@@ -59,6 +60,7 @@ def login_home(request):
     date_parse = str(date).replace('/', '-')
     ren = date_parse[:10]
     den = date_parse[13:]
+    team = request.GET.get('team-member')
     permission_query = permission.objects.get(user_permit_id=request.user.pk).role_permit.role
     # reporting for admin view
     if permission_query == 'Admin' and not None:
@@ -97,6 +99,41 @@ def login_home(request):
                 request_cancelled = dell['count_request_status']
             elif search_filler('Cancelled', request_status_query) is None:
                 request_cancelled = 0
+                # query the team member, if date is null
+        if team and date:
+            query_no_date = user_request_table.objects.filter(
+                Q(request_request__assigned_to=team) & Q(request_request__request_open__range=[ren, den])) \
+                    .values('request_request__close_request') \
+                    .annotate(count_request_status=Count('request_request__close_request'))
+
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['request_request__close_request'] == value:
+                        return key
+
+            if search_filler('Open', query_no_date):
+                dell = search_filler('Open', query_no_date)
+                request_open = dell['count_request_status']
+            elif search_filler('Open', query_no_date) is None:
+                    request_open = 0
+
+            if search_filler('Closed', query_no_date):
+                    dell = search_filler('Closed', query_no_date)
+                    request_closed = dell['count_request_status']
+            elif search_filler('Closed', query_no_date) is None:
+                    request_closed = 0
+
+            if search_filler('Completed', query_no_date):
+                    dell = search_filler('Completed', query_no_date)
+                    request_completed = dell['count_request_status']
+            elif search_filler('Completed', query_no_date) is None:
+                    request_completed = 0
+
+            if search_filler('Cancelled', query_no_date):
+                    dell = search_filler('Cancelled', query_no_date)
+                    request_cancelled = dell['count_request_status']
+            elif search_filler('Cancelled', query_no_date) is None:
+                    request_cancelled = 0
 
         # if the date range is not called, return the reports of request to the admin
         elif date is None:
@@ -231,7 +268,6 @@ def login_home(request):
                 request_phone = dell['count_request_category']
             elif search_filler('IP Phone', query_no_date) is None:
                 request_phone = 0
-
         # total number of requests per regions
         query_requests_regions = User.objects.values('bio_user_relation__branch') \
             .annotate(count_request_location=Count('bio_user_relation__branch'))
@@ -268,6 +304,187 @@ def login_home(request):
         else:
             pass
 
+    # view for the users
+    elif permission_query == 'User' and not None:
+        user_query = user_request_table.objects.filter(user_request_id=request.user.pk)
+        date = request.GET.get('daterange')
+        date_parse = str(date).replace('/', '-')
+        ren = date_parse[:10]
+        den = date_parse[13:]
+        # reporting for admin view
+        if not date:
+            request_status_query = user_query.values('request_request__close_request') \
+                .values('request_request__close_request'). \
+                annotate(count_request_status=Count('request_request__close_request'))
+
+            # function to search for key values in queries
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['request_request__close_request'] == value:
+                        return key
+
+            if search_filler('Open', request_status_query):
+                dell = search_filler('Open', request_status_query)
+                request_open = dell['count_request_status']
+            elif search_filler('Open', request_status_query) is None:
+                request_open = 0
+
+            if search_filler('Closed', request_status_query):
+                dell = search_filler('Closed', request_status_query)
+                request_closed = dell['count_request_status']
+            elif search_filler('Closed', request_status_query) is None:
+                request_closed = 0
+
+            if search_filler('Completed', request_status_query):
+                dell = search_filler('Completed', request_status_query)
+                request_completed = dell['count_request_status']
+            elif search_filler('Completed', request_status_query) is None:
+                request_completed = 0
+
+            if search_filler('Cancelled', request_status_query):
+                dell = search_filler('Cancelled', request_status_query)
+                request_cancelled = dell['count_request_status']
+            elif search_filler('Cancelled', request_status_query) is None:
+                request_cancelled = 0
+        elif date:
+            request_status_query = user_query.filter(request_request__request_open__range=[ren, den]) \
+                .values('request_request__close_request') \
+                .values('request_request__close_request'). \
+                annotate(count_request_status=Count('request_request__close_request'))
+
+            # function to search for key values in queries
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['request_request__close_request'] == value:
+                        return key
+
+            if search_filler('Open', request_status_query):
+                dell = search_filler('Open', request_status_query)
+                request_open = dell['count_request_status']
+            elif search_filler('Open', request_status_query) is None:
+                request_open = 0
+
+            if search_filler('Closed', request_status_query):
+                dell = search_filler('Closed', request_status_query)
+                request_closed = dell['count_request_status']
+            elif search_filler('Closed', request_status_query) is None:
+                request_closed = 0
+
+            if search_filler('Completed', request_status_query):
+                dell = search_filler('Completed', request_status_query)
+                request_completed = dell['count_request_status']
+            elif search_filler('Completed', request_status_query) is None:
+                request_completed = 0
+
+            if search_filler('Cancelled', request_status_query):
+                dell = search_filler('Cancelled', request_status_query)
+                request_cancelled = dell['count_request_status']
+            elif search_filler('Cancelled', request_status_query) is None:
+                request_cancelled = 0
+
+        date_category = request.GET.get('date')
+        date_parse_category = str(date_category).replace('/', '-')
+        ren_category = date_parse_category[:10]
+        den_category = date_parse_category[13:]
+        # view request per service
+        if date_category is None:
+            query_user_service = user_request_table.objects.filter(user_request_id=request.user.pk)
+            query_no_date = query_user_service.values('request_request__sla_category__sla_category') \
+                .annotate(count_request_category=Count('request_request__sla_category__sla_category'))
+
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['request_request__sla_category__sla_category'] == value:
+                        return key
+
+            if search_filler('Email', query_no_date):
+                dell = search_filler('Email', query_no_date)
+                request_email = dell['count_request_category']
+            elif search_filler('Email', query_no_date) is None:
+                request_email = 0
+
+            if search_filler('Authentication', query_no_date):
+                dell = search_filler('Authentication', query_no_date)
+                request_authentication = dell['count_request_category']
+            elif search_filler('Authentication', query_no_date) is None:
+                request_authentication = 0
+
+            if search_filler('Network', query_no_date):
+                dell = search_filler('Network', query_no_date)
+                request_network = dell['count_request_category']
+            elif search_filler('Network', query_no_date) is None:
+                request_network = 0
+
+            if search_filler('Software', query_no_date):
+                dell = search_filler('Software', query_no_date)
+                request_software = dell['count_request_category']
+            elif search_filler('Software', query_no_date) is None:
+                request_software = 0
+
+            if search_filler('Printer', query_no_date):
+                dell = search_filler('Printer', query_no_date)
+                request_printer = dell['count_request_category']
+            elif search_filler('Printer', query_no_date) is None:
+                request_printer = 0
+
+            if search_filler('IP Phone', query_no_date):
+                dell = search_filler('IP Phone', query_no_date)
+                request_phone = dell['count_request_category']
+            elif search_filler('IP Phone', query_no_date) is None:
+                request_phone = 0
+        elif date_category:
+            query_user_service = user_request_table.objects.filter(user_request_id=request.user.pk)
+            query_no_date = query_user_service.filter(request_request__request_open__range=[ren_category, den_category]) \
+                .values('request_request__sla_category__sla_category') \
+                .annotate(count_request_category=Count('request_request__sla_category__sla_category'))
+
+            def search_filler(value, dictionary):
+                for key in dictionary:
+                    if key['request_request__sla_category__sla_category'] == value:
+                        return key
+
+            if search_filler('Email', query_no_date):
+                dell = search_filler('Email', query_no_date)
+                request_email = dell['count_request_category']
+            elif search_filler('Email', query_no_date) is None:
+                request_email = 0
+
+            if search_filler('Authentication', query_no_date):
+                dell = search_filler('Authentication', query_no_date)
+                request_authentication = dell['count_request_category']
+            elif search_filler('Authentication', query_no_date) is None:
+                request_authentication = 0
+
+            if search_filler('Network', query_no_date):
+                dell = search_filler('Network', query_no_date)
+                request_network = dell['count_request_category']
+            elif search_filler('Network', query_no_date) is None:
+                request_network = 0
+
+            if search_filler('Software', query_no_date):
+                dell = search_filler('Software', query_no_date)
+                request_software = dell['count_request_category']
+            elif search_filler('Software', query_no_date) is None:
+                request_software = 0
+
+            if search_filler('Printer', query_no_date):
+                dell = search_filler('Printer', query_no_date)
+                request_printer = dell['count_request_category']
+            elif search_filler('Printer', query_no_date) is None:
+                request_printer = 0
+
+            if search_filler('IP Phone', query_no_date):
+                dell = search_filler('IP Phone', query_no_date)
+                request_phone = dell['count_request_category']
+            elif search_filler('IP Phone', query_no_date) is None:
+                request_phone = 0
+
+        # request per region view not applicable to user
+        request_location_abuja = 0
+        request_location_ph = 0
+        request_location_lagos = 0
+        request_location_ikoyi = 0
+
     # return only database value, for database optimization
     if bio.objects.filter(bio_user=request.user.pk):
         qs = bio.objects.get(bio_user=request.user.pk).department
@@ -288,7 +505,8 @@ def login_home(request):
                'request_phone': request_phone, 'request_location_abuja': request_location_abuja,
                'request_location_ikoyi': request_location_ikoyi,
                'request_location_lagos': request_location_lagos,
-               'request_location_ph': request_location_ph}
+               'request_location_ph': request_location_ph,
+               'permission_query': permission_query}
     return render(request, 'home_login.html', context)
 
 

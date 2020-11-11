@@ -62,7 +62,7 @@
 
 <!-- Bar charts Code-->
 
-<canvas id="barChart" width="200" height="100"></canvas>
+<canvas id="barChart" width="200" height="100" onclick="window.open('http://www.google.com', '_blank')"></canvas>
 
 <script type="text/javascript">
 var ctxB = document.getElementById("barChart").getContext('2d');
@@ -110,9 +110,11 @@ beginAtZero: true
 .ui-datepicker { font-size:9pt !important}
 </style>
 
-<div><form method="GET"><input type="text" name="daterange" class="ui-datepicker"   />
-<button class="btn btn-outline-amber btn-sm " type="submit">Filter</button>
-</form></div>
+    <div><form method="GET"><input type="text" name="daterange" class="ui-datepicker"   />
+        <form method="GET"> <input type="text" name="team-member"placeholder="Colleague's name"  />
+<button class="btn btn-outline-amber btn-sm " type="submit">Go </button>
+</form> </div>
+
 
 <script>
 $(function() {
@@ -309,7 +311,7 @@ $(function() {
 
 
 
-
+{% if permission_query != 'User' %}
 <script>
 //doughnut
 var ctxD = document.getElementById("doughnutChart").getContext('2d');
@@ -330,6 +332,7 @@ responsive: true
 }
 });
 </script>
+{% endif %}
 </div>
 </div>
 
@@ -353,16 +356,7 @@ data-dismiss="alert" aria-label="Close">
 
 </div>
 
-<!-- JQuery -->
-{% cached 3600 staticfiles %}
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<!-- Bootstrap tooltips -->
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
-<!-- Bootstrap core JavaScript -->
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
-<!-- MDB core JavaScript -->
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
-{% endcached %}
+
 
 {% endblock content %}
 

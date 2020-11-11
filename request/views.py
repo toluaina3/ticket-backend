@@ -6,7 +6,6 @@ from verify.forms import UpdateBioForms, RoleForm
 from .models import bio, roles_table, user_request_table, request_table, sla
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
 from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, Sla_request_Form
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
@@ -140,8 +139,8 @@ def list_user_request(request, pk=None):
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
     role = request.user.permit_user.get(user_permit_id=get_pk).role_permit
-
-    if request.user.permit_user.filter(role_permit__role='User'):
+    print(role)
+    if request.user.permit_user.filter(role_permit__role='User').only():
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \
                 filter(user_request_id=get_pk).order_by('-request_request__request_open').only()
@@ -162,40 +161,46 @@ def list_user_request(request, pk=None):
     # query for admin and it team view
     elif request.user.permit_user.filter(role_permit__role='Admin').only():
         # color code the overdue request on the view table
-        overdue_time = request_table.objects.all()
-        if overdue_time is not None:
-            for listing in overdue_time:
-                get_time = listing.request_open + timezone.timedelta(minutes=listing.sla_category.sla_time)
-                # show the overdue request with color code on the view table
-                if timezone.now() > get_time:
-                    overdue_request = timezone.now() > get_time
-                    print(overdue_request)
-                # show the request with color code on the view table
-                else:
-                    overdue_request = False
-                    print(overdue_request)
-        else:
-            pass
-
+        over = []
         if user_request_table.objects.all() is not None:
             request_list = user_request_table.objects.all().order_by('-request_request__request_open').only()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
                 pagy = paginator.get_page(page_number)
+                # call the zip method to run for loop in parallel with request and overdue
+                loop = zip(over, pagy)
+                if pagy is not None:
+                    for listing in pagy:
+                        get_time = listing.request_request.request_open + \
+                                   timezone.timedelta(minutes=listing.request_request.sla_category.sla_time)
+                        # show the overdue request with color code on the view table
+
+                        if timezone.now() > get_time and not None:
+                            overdue_request = 'Yes'
+                            over.append(overdue_request)
+                        # show the request with color code on the view table
+                        elif timezone.now() < get_time and not None:
+                            overdue_request = 'No'
+                            over.append(overdue_request)
+                        else:
+                            pass
+                else:
+                    pass
             except PageNotAnInteger:
                 pagy = paginator.page(1)
             except EmptyPage:
                 pagy = paginator.page(paginator.num_pages)
-            context = {'get_pk': get_pk, 'pagy': pagy, 'role': role}
+            context = {'get_pk': get_pk, 'pagy': pagy, 'role': role, 'loop': loop}
             return render(request, 'list_user_requests.html', context)
         else:
             pagy = 'No Requests'
-            context = {'pagy': pagy, 'overdue_request': overdue_request}
+            context = {'pagy': pagy}
         return render(request, 'list_user_requests.html', context)
 
     # view for IT team, only assigned task are seen.
     elif request.user.permit_user.filter(role_permit__role='IT team').only():
+        over =[]
         if user_request_table.objects.filter(request_request__assigned_to=get_pk) is not None:
             request_list = user_request_table.objects.filter(
                 request_request__assigned_to=get_pk.first_name + ' ' + get_pk.last_name) \
@@ -204,11 +209,31 @@ def list_user_request(request, pk=None):
             page_number = request.GET.get('page')
             try:
                 pagy = paginator.get_page(page_number)
+                loop = zip(over, pagy)
+                if pagy is not None:
+                    for listing in pagy:
+                        get_time = listing.request_request.request_open + \
+                                   timezone.timedelta(minutes=listing.request_request.sla_category.sla_time)
+                        # show the overdue request with color code on the view table
+
+                        if timezone.now() > get_time and not None:
+                            overdue_request = 'Yes'
+                            print(overdue_request)
+                            over.append(overdue_request)
+                        # show the request with color code on the view table
+                        elif timezone.now() < get_time and not None:
+                            overdue_request = 'No'
+                            print(overdue_request)
+                            over.append(overdue_request)
+                        else:
+                            pass
+                else:
+                    pass
             except PageNotAnInteger:
                 pagy = paginator.page(1)
             except EmptyPage:
                 pagy = paginator.page(paginator.num_pages)
-            context = {'get_pk': get_pk, 'pagy': pagy, 'role': role}
+            context = {'get_pk': get_pk, 'pagy': pagy, 'role': role, 'loop': loop}
             return render(request, 'list_user_requests.html', context)
     messages.error(request, 'Role has not been assigned')
     return render(request, 'list_user_requests.html')
@@ -397,8 +422,10 @@ def search_request_list_query(request):
                                                          | Q(user_request__last_name__exact=search_field)
                                                          | Q(request_request__assigned_to__icontains=search_field)
                                                          | Q(request_request__assigned_to__exact=search_field)
-                                                         | Q(request_request__sla_category__sla_category__exact=search_field)
-                                                         | Q(request_request__sla_category__sla_category__icontains=search_field)
+                                                         | Q(
+            request_request__sla_category__sla_category__exact=search_field)
+                                                         | Q(
+            request_request__sla_category__sla_category__icontains=search_field)
                                                          | Q(request_request__close_request__icontains=search_field)) \
             .order_by('-request_request__request_open')
         paginator = Paginator(query_search, 8)
