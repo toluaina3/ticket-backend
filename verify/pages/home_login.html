@@ -27,11 +27,12 @@
 }
 </style>
 
-<a class="badge" href="">Reports</a>
+<a class="badge" href="{% url 'home-report' %}">Reports</a>
 
 <div class="stick-to-right">
 
 <p>Welcome, <strong>{{ user }}, </strong> {{ role }}</p>
+
 
 </div>
 <br>
@@ -62,7 +63,7 @@
 
 <!-- Bar charts Code-->
 
-<canvas id="barChart" width="200" height="100" onclick="window.open('http://www.google.com', '_blank')"></canvas>
+<canvas id="barChart" width="200" height="100"></canvas>
 
 <script type="text/javascript">
 var ctxB = document.getElementById("barChart").getContext('2d');
@@ -228,7 +229,6 @@ $(function() {
 </div>
 
 
-
 <style>
 .stick-to-sales {
     width: 50px;
@@ -240,23 +240,6 @@ $(function() {
 
 
 <!-- Section: Block Content -->
-
-<div class="col-sm-4 stick-to-sales">
-<br>
-<div class="card bg-light mb-3" style="max-width: 15rem; box-shadow: 1px 1px 5px grey;max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc; "><strong>DAILY REQUESTS</strong> </div>
-<div class="card-body">
-<h5 class="card-title" style="font-size: medium;"><strong>{{ sales_daily_out|intcomma }}
-    <a>{% if sales_daily_out > previous_daily_out %}
-        <a style="color: green; margin: 10px;"> &uarr;{{ math_percentage }}</a>
-    {% else %}<a style="color: red; margin: 10px;"> &darr;{{ math_percentage }}</a>
-    {% endif %}</a></strong></h5>
-    <p style="font-size: small; color: grey">Previous</p>
-<h5 class="card-title" style="font-size: medium; color: grey"><strong>&{{ previous_daily_out|intcomma }}</strong></h5>
-</div>
-</div>
-</div>
-
 <style>
 .stick-to-sales2 {
     width: 50px;
@@ -266,46 +249,28 @@ $(function() {
 </style>
 
 
-
-
-
+{% if permission_query == 'Admin' %}
 <div class="col-sm-4" >
 <br>
-<div class="card bg-light" style="max-width: 15rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc;"><strong>DAILY CLOSED REQUESTS</strong> </div>
+<div class="card bg-light; modal-fade" style="max-width: 20rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 50rem; font-family: 'Lato Black',fantasy">
+<div class="card-header" style="background: #17cefc; text-align: center" ><strong>SITREP</strong> </div>
 <div class="card-body">
-<h5 class="card-title" style=" font-size: medium"><strong>{{ sales_count_daily }} <a>{% if sales_count_daily > previous_sale_out %}
-        <a style="color: green; margin: 10px;"> &uarr;{{ sale_percentage }}</a>
-    {% else %}<a style="color: red; margin: 10px;"> &darr;{{ sale_percentage }}</a>
-    {% endif %}</a></strong></h5>
-<p style="font-size: small; color: grey">Previous</p>
-<h5 class="card-title" style=" font-size: medium;  color: grey"><strong>{{ previous_sale_out}}</strong></h5>
+<p class="card-title" style=" font-size: medium">
+    <a>Unassigned Requests<a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}"><span class="badge badge-danger ml-2">{{ count_unassigned }}</span></a></a><br><br>
+Overdue Requests
+{% if count >= 10 %}
+<a style="margin: 50px; color: red;" href="{% url 'home-report' %}" target="_blank">&uarr; {{ count }}</a>{% else %}
+<a style="margin: 50px; color: green;" href="{% url 'home-report' %}" target="_blank">&darr; {{ count }}</a>
+{% endif %}
 
-
-</div>
-</div>
-</div>
-
-
-<div class="col-sm-4" >
 <br>
-<div class="card bg-light" style="max-width: 15rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 10rem; font-family: 'Lato Black',fantasy">
-<div class="card-header" style="background: #17cefc;"><strong>MONTHLY REQUESTS</strong> </div>
-<div class="card-body">
-<h5 class="card-title" style=" font-size: medium"><strong>{{ monthly_cost_sales_out|intcomma }}<a>{% if monthly_cost_sales_out > previous_monthly_cost_data %}
-        <a style="color: green; margin: 10px;"> &uarr;{{ monthly_cost_percentage }}</a>
-    {% else %}<a style="color: red; margin: 10px;"> &darr;{{ monthly_cost_percentage }}</a>
-    {% endif %}</a></strong></h5>
-<p style="font-size: small; color: grey">Previous</p>
-<h5 class="card-title" style=" font-size: medium;  color: grey"><strong>{{ previous_monthly_cost_data|intcomma }}</strong></h5>
-</div>
+{% for list in team_member_query %}{{ list.user_permit.get_full_name }}<br>{% endfor %}</p>
 </div>
 </div>
 </div>
 
-
 </div>
-
+{% endif %}
 
 
 

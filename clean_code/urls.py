@@ -18,11 +18,11 @@ from django.urls import path, re_path, include
 from django.conf import settings
 import debug_toolbar
 
-#if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
+# if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
 urlpatterns = [
-        path('admin/', admin.site.urls),
-        re_path(r'^', include('verify.urls')),
-        re_path(r'^', include('request.urls')),
-        re_path(r'^__debug__/', include(debug_toolbar.urls)),
+    path('admin/', admin.site.urls),
+    re_path(r'^', include('verify.urls')),
+    re_path(r'^', include('request.urls')),
+    re_path(r'^__debug__/', include(debug_toolbar.urls)),
 
-    ]
+]

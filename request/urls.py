@@ -22,4 +22,5 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^request/search/', views.search_request_list_query, name='request-search'),
         re_path(r'^request/sla/delete/$', views.sla_delete, name='sla-delete'),
 
+
     ]
