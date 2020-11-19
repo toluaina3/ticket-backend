@@ -31,16 +31,31 @@ data-dismiss="alert" aria-label="Close">
 {% endfor %}
 {% endif %}
 
+<style>.alignleft {
+	float: left;
+}
+.alignright {
+	float: right;
+}</style>
 
 
-    <div class="card">
-      <div class="card-body">
-        <p class="card-text">{{ query }}</p>
-      </div>
-    </div>
+<div class="card">
+<div class="card-body">
 
-<div class="form-row">
-
+<p class="alignright" style="color: #001952; font-size: small">
+Dept: {{ get_pk.user_request.bio_user_relation.department }}
+<br> Category: {{ get_pk.request_request.sla_category.sla_category }}<br>
+Location: {{ get_pk.user_request.bio_user_relation.branch }}<br>
+Priority:<br>
+Phone: {% if get_pk.user_request.bio_user_relation %}{{ get_pk.user_request.bio_user_relation.phone }}{% else %}Not Available{% endif %}<br>
+Due Date: {% if get_pk.request_request.close_request == 'Open' %}{% if time > due %}<a style="color: red">{{ due }}{% else %}<a style="color: green">{{ due }}{% endif %}
+    {% elif get_pk.request_request.close_request == 'Closed' %}Resolved{% else %}Not Applicable{% endif %}</a></p><br>
+<h5 style="color: #001952"><strong>{{ get_pk.user_request.get_full_name.upper }}</strong></h5>
+<br><br><br><br><br>
+<p class="card-text">{{ query }}</p>
+<br>
+<br>
+<div class="form-row" style="font-size: small">
 {% if query.close_request == 'Open' %}
 
 <div class="form-group col-md-2 mb-0">
@@ -69,11 +84,17 @@ data-dismiss="alert" aria-label="Close">
 <div class="form-group col-md-12 mb-0">
 <button type="submit" class="btn btn-primary" style="background: #001952">Update</button>
 </div>
+{% elif query.close_request == 'Closed'  %}
 
 {% endif %}
 
 
 </form>
 </div>
+<a class="alignright" href="{% url 'email-requester' pk=get_pk.pk %}">Send Email to Requester</a>
+</div>
+</div>
+
+
 </div>
 {% endblock %}

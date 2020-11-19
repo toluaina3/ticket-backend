@@ -13,6 +13,7 @@ from .forms import Assign_Forms
 from django.db.models import Q
 from django.utils import timezone
 from clean_code.tasks import logging_info_task
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 
 # Create your views here.
@@ -59,8 +60,8 @@ def login_home(request):
         request_authentication, request_email, \
         request_phone, request_printer, request_location_abuja, \
         request_location_ikoyi, request_location_lagos, \
-        request_location_ph, count, team_member_query, \
-        overdue_query, count_unassigned
+        request_location_ph, count, \
+        overdue_query, count_unassigned, request_per_IT_team
 
     # variables for date range picker
     date = request.GET.get('daterange')
@@ -492,8 +493,8 @@ def login_home(request):
         request_location_lagos = 0
         request_location_ikoyi = 0
 
-    # number of overdue request
-    overdue_request = user_request_table.objects.all().order_by('-request_request__request_open').only()
+    # number of overdue request and cache the query
+    overdue_request = user_request_table.objects.all().order_by('user_request__first_name').only().cache()
     if overdue_request is not None:
         count = 0
         count_unassigned = 0
@@ -513,12 +514,22 @@ def login_home(request):
             # number of unassigned requests
             if listing.request_request.assigned_to == 'None':
                 count_unassigned = count_unassigned + 1
+            # number of requests per IT team
             else:
                 pass
-    # track modal, track IT members with highest requests
-    if permission is not None:
-        team_member_query = permission.objects.filter(role_permit__role='IT team').order_by('user_permit__first_name')
-
+    # query the database and follow the same naming convention of order to relate
+    get_IT_uuid = permission.objects.all().filter(role_permit__role='IT team') \
+        .values('user_permit__first_name', 'user_permit__last_name').order_by('user_permit__first_name').cache()
+    # get the uuid from the list of the IT team
+    if get_IT_uuid is not None:
+        request_per_IT_team = []
+        for i in get_IT_uuid:
+            IT_team = i['user_permit__first_name'] + ' ' + i['user_permit__last_name']
+            # count the number of assigned request per IT team member
+            request_per = user_request_table.objects.filter(request_request__assigned_to=IT_team).values(
+                'request_request__assigned_to') \
+                .annotate(count_assigned=Count('request_request__assigned_to'))
+            request_per_IT_team.append(request_per)
     # return only database value, for database optimization
     if bio.objects.filter(bio_user=request.user.pk):
         qs = bio.objects.get(bio_user=request.user.pk).department
@@ -541,8 +552,8 @@ def login_home(request):
                'request_location_lagos': request_location_lagos,
                'request_location_ph': request_location_ph,
                'permission_query': permission_query, 'count': count,
-               'team_member_query': team_member_query, 'overdue_query': overdue_query,
-               'count_unassigned': count_unassigned}
+               'overdue_query': overdue_query,
+               'count_unassigned': count_unassigned, 'request_per_IT_team': request_per_IT_team}
     return render(request, 'home_login.html', context)
 
 
@@ -620,4 +631,27 @@ def password_reset_request(request):
 def home_report(request):
     if not request.user.is_authenticated:
         return redirect('login')
+    overdue_request = user_request_table.objects.all().order_by('user_request__first_name').only().cache()
+    if overdue_request is not None:
+        count = 0
+        overdue_query = []
+        for listing in overdue_request:
+            # logic: if request if open and time is overdue
+            if listing.request_request.close_request == 'Open':
+                get_time = listing.request_request.request_open + \
+                           timezone.timedelta(minutes=listing.request_request.sla_category.sla_time)
+                # show the request with color code on the view table
+                if timezone.now() > get_time and not None:
+                    count = count + 1
+                    overdue_list = listing
+                    overdue_query.append(overdue_list)
+        paginator = Paginator(overdue_query, 8)
+        page_number = request.GET.get('page')
+        try:
+            pagy = paginator.get_page(page_number)
+        except PageNotAnInteger:
+            pagy = paginator.page(1)
+        except EmptyPage:
+            pagy = paginator.page(paginator.num_pages)
+        return render(request, 'home_report.html', {'pagy': pagy})
     return render(request, 'home_report.html')

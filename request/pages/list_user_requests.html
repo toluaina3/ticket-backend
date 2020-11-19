@@ -8,8 +8,7 @@
 
 
 {% block content %}
-<div class="">
-<br>
+<div class="" style="margin: 35px">
 <button type="submit" class="btn btn-primary" style="background: #001952">View Requests</button>
 <a class="btn btn-primary" style="background: #001952" href="{% url 'request-create' pk=get_pk.user_pk%}">Create Request</a>
 <br>
@@ -41,12 +40,13 @@ data-dismiss="alert" aria-label="Close">
 <tr>
 <th scope="col">#</th>
 <th scope="col">Time</th>
-<th scope="col">Request</th>
+<th scope="col">Subject</th>
 <th scope="col">Requester</th>
 <th scope="col">Location</th>
 <th scope="col">Assigned</th>
 <th scope="col">Cc</th>
 <th>Status</th>
+{% if role.role != 'User' %}<th>Priority</th>{% endif %}
 </tr>
 </thead>
 <tbody>
@@ -62,6 +62,7 @@ data-dismiss="alert" aria-label="Close">
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
 <td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role.role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
+{% if role.role != 'User' %}<td></td>{% endif %}
 </tr>
 {% endfor %}
 
@@ -76,6 +77,7 @@ data-dismiss="alert" aria-label="Close">
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
 <td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role.role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
+{% if role.role != 'User' %}<td></td>{% endif %}
 </tr>
 {% endfor %}
 {% endif %}

@@ -84,6 +84,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
             ],
         },
     },
@@ -148,8 +149,7 @@ CACHEOPS = {
     # cache the user request for 1 hour
     'request.user_request_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
     # cache the sla for 1 hour
-    'request.sla': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
-
+    'request.sla': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 5},
 
 }
 
@@ -164,8 +164,6 @@ SESSION_REDIS = {
     'prefix': 'session',
     'socket_timeout': 1
 }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -216,4 +214,5 @@ EMAIL_HOST_USER = env('EMAIL_HOST')
 EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Ticket by IT Team <noreply@ticket.com>'
+
 

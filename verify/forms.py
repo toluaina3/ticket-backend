@@ -6,6 +6,11 @@ from django.db.models.query_utils import Q
 from cacheops import invalidate_model
 
 
+class Email_Requester(forms.Form):
+    subject = forms.CharField(max_length=50, required=False)
+    email = forms.CharField(max_length=2000, required=True, widget=forms.Textarea)
+
+
 class Sla_request_Form(forms.ModelForm):
     invalidate_model(sla)
     choice = [(sla.sla_category, sla.sla_category) for sla in (sla.objects.all().order_by('sla_category').only())]
@@ -27,8 +32,12 @@ class Assign_Forms(forms.ModelForm):
     choices = [(user.first_name + ' ' + user.last_name, user.get_full_name)
                for user in
                (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
+    choices.insert(0, ('', 'None'))
     assigned_to = forms.ChoiceField(choices=choices, required=False)
     copy_team = forms.ChoiceField(choices=choices, required=False)
+
+
+
 
     class Meta:
         model = request_table

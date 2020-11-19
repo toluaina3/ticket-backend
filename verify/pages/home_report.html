@@ -6,5 +6,65 @@
 
 
 {% block content %}
-{% for i in overdue_query %}{{i}}<br>{% endfor %}
+    <br>
+<div class="container p-5">
+
+<div class="col-sm-4 ml-md-auto">
+<nav >
+<form class="form-inline"  method="GET" action="{% url 'request-search' %}">
+    {% csrf_token %}
+<input class="form-control mr-sm-2 font-small" type="search" value="{{ request.GET.search }}" placeholder="Search" aria-label="Search" name="search" required>
+<button class="btn btn-outline-success btn-sm" type="submit">Search</button>
+</form>
+</nav>
+</div>
+
+<table class="table table-hover">
+<thead>
+<tr>
+<th scope="col">#</th>
+<th scope="col">Overdue Request</th>
+<th scope="col">Requester</th>
+<th scope="col">Location</th>
+<th scope="col">Assigned</th>
+<th scope="col">Cc</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+
+{% for list in pagy %}
+<tr>
+<th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
+<td>{{ list.request_request.request}}</td>
+<td>{{ list.user_request.get_full_name }}</td>
+<td>{{ list.user_request.bio_user_relation.branch }}</td>
+<td>{{ list.request_request.assigned_to }}</td>
+<td>{{ list.request_request.copy_team }}</td>
+<td>{{ list.request_request.close_request }}</td>
+</tr>
+{% endfor %}
+
+
+</tbody>
+</table>
+
+<div class="pagination justify-content-center">
+<span class="step-links border border-light">
+{% if pagy.has_previous %}
+<a class="badge btn-outline-dark" href="?page={{ pagy.previous_page_number }}">Previous</a>
+{% endif %}
+<span class="current badge">
+Page {{ pagy.number }} of {{ pagy.paginator.num_pages }}
+</span>
+{% if pagy.has_next %}
+<a class="badge btn-outline-dark" href="?page={{ pagy.next_page_number }}">Next</a>
+<a class="badge btn-outline-dark" href="?page={{ pagy.paginator.num_pages }}">Last&raquo;</a>
+{% endif %}
+</span>
+</div>
+
+
+</div>
 {% endblock %}
+

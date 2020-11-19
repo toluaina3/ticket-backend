@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404,reverse
 from verify.models import User
 from request.models import permission
 from django.views.generic.list import ListView
@@ -6,11 +6,11 @@ from verify.forms import UpdateBioForms, RoleForm
 from .models import bio, roles_table, user_request_table, request_table, sla
 from django.contrib import messages
 from django.db import transaction
-from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, Sla_request_Form
+from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, Sla_request_Form, Email_Requester
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
-    send_mail_task_closed_user, send_mail_task_cancelled_request
+    send_mail_task_closed_user, send_mail_task_cancelled_request, send_mail_task_response_requester
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.db.models import Q
@@ -109,7 +109,6 @@ def requests_user_create(request, pk=None):
     if request.method == 'POST':
         forms = Request_Forms(request.POST)
         sla_category = Sla_request_Form(request.POST).data['sla_category']
-        print(forms.errors)
         if forms.is_valid():
             post = forms.save(commit=False)
             get_category = sla.objects.get(sla_category=sla_category)
@@ -139,11 +138,10 @@ def list_user_request(request, pk=None):
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
     role = request.user.permit_user.get(user_permit_id=get_pk).role_permit
-    print(role)
-    if request.user.permit_user.filter(role_permit__role='User').only():
+    if request.user.permit_user.filter(role_permit__role='User').only().cache():
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \
-                filter(user_request_id=get_pk).order_by('-request_request__request_open').only()
+                filter(user_request_id=get_pk).order_by('-request_request__request_open').only().cache()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -159,11 +157,11 @@ def list_user_request(request, pk=None):
         context = {'pagy': pagy}
 
     # query for admin and it team view
-    elif request.user.permit_user.filter(role_permit__role='Admin').only():
+    elif request.user.permit_user.filter(role_permit__role='Admin').only().cache():
         # color code the overdue request on the view table
         over = []
         if user_request_table.objects.all() is not None:
-            request_list = user_request_table.objects.all().order_by('-request_request__request_open').only()
+            request_list = user_request_table.objects.all().order_by('-request_request__request_open').only().cache()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -199,12 +197,12 @@ def list_user_request(request, pk=None):
         return render(request, 'list_user_requests.html', context)
 
     # view for IT team, only assigned task are seen.
-    elif request.user.permit_user.filter(role_permit__role='IT team').only():
-        over =[]
+    elif request.user.permit_user.filter(role_permit__role='IT team').only().cache():
+        over = []
         if user_request_table.objects.filter(request_request__assigned_to=get_pk) is not None:
             request_list = user_request_table.objects.filter(
                 request_request__assigned_to=get_pk.first_name + ' ' + get_pk.last_name) \
-                .order_by('-request_request__request_open').only()
+                .order_by('-request_request__request_open').only().cache()
             paginator = Paginator(request_list, 8)
             page_number = request.GET.get('page')
             try:
@@ -243,6 +241,14 @@ def assign_task(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = user_request_table.objects.get(pk=pk)
+    time = timezone.now()
+    # display the due date for the request
+    if get_pk is not None:
+        get_time = get_pk.request_request.request_open + \
+                   timezone.timedelta(minutes=get_pk.request_request.sla_category.sla_time)
+        # show the overdue request with color code on the view table
+        if timezone.now() > get_time and not None:
+            due = get_time
     if request.method == 'POST':
         assign = Assign_Forms(request.POST)
         if assign.is_valid():
@@ -273,21 +279,55 @@ def assign_task(request, pk=None):
                 # invalidate the model request table not suitable for multiples database calls
                 # try to invalidate object should work
                 invalidate_model(request_table)
-                messages.success(request, 'Request has been updated')
-                # send email to user when request has been assigned to a staff
-                send_mail_task_assigned_user(user=get_pk.user_request.pk, assign=post.assigned_to)
-                # log to show date and time of task assigned to an IT staff
-                logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
-                return redirect('request')
-        else:
-            messages.error(request, 'Invalid Input')
-            return redirect('assign-task')
+                # send email to user and assignee when request has been assigned to a staff
+                if post.assigned_to:
+                    get_team = User.objects.filter(Q(first_name=str(post.assigned_to.split(' ')[0]))
+                                                   & Q(last_name=str(post.assigned_to.split(' ')[1])))
+                    it_team_assigned_pk = get_team.values('user_pk')[0]['user_pk']
+                    lead = [get_pk.user_request.pk, it_team_assigned_pk]
+                    for i in lead:
+                        send_mail_task_assigned_user(user=i, assign=post.assigned_to)
+                    # log to show date and time of task assigned to an IT staff
+                    logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
+                    messages.success(request, 'Your request has been assigned')
+                    return redirect('request')
+            # if assign form is None, return message
+            messages.error(request, 'You can not perform the request, Assign the task to a team')
+            return redirect('request')
     else:
         forms = Request_Forms(instance=get_pk.request_request)
         query = request_table.objects.get(id=get_pk.request_request.pk)
         assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
-        context = {'forms': forms, 'assign': assign, 'query': query}
+        context = {'forms': forms, 'assign': assign, 'query': query,
+                   'get_pk': get_pk, 'due': due, 'time': time}
         return render(request, 'assign_task.html', context)
+
+
+def send_email_requester(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = user_request_table.objects.get(pk=pk)
+    assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
+    if request.method == 'POST':
+        assign = Assign_Forms(request.POST)
+        subject = request.POST['subject']
+        email = request.POST['email']
+        requester_email = get_pk.user_request.pk
+        # copy team member in the email
+        if assign.is_valid():
+            post = assign.save(commit=False)
+            copy_team = post.assigned_to
+            requester_email = get_pk.user_request.pk
+            send_email = requester_email + copy_team
+            send_mail_task_response_requester(user=send_email, subject=subject, email=email)
+            messages.success(request, 'Email was sent to user')
+            return redirect('request')
+        send_mail_task_response_requester(user=requester_email, subject=subject, email=email)
+        messages.success(request, 'Email was sent to user')
+        return redirect('request')
+    forms = Email_Requester()
+    assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
+    return render(request, 'email-requester.html', {'forms': forms, 'get_pk': get_pk, 'assign': assign})
 
 
 def user_confirm_request(request, pk=None):

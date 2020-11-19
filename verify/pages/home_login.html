@@ -248,6 +248,15 @@ $(function() {
 }
 </style>
 
+<style>.alignleft {
+	float: left;
+}
+.alignright {
+	float: right;
+}</style>
+
+
+
 
 {% if permission_query == 'Admin' %}
 <div class="col-sm-4" >
@@ -256,15 +265,26 @@ $(function() {
 <div class="card-header" style="background: #17cefc; text-align: center" ><strong>SITREP</strong> </div>
 <div class="card-body">
 <p class="card-title" style=" font-size: medium">
-    <a>Unassigned Requests<a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}"><span class="badge badge-danger ml-2">{{ count_unassigned }}</span></a></a><br><br>
+    <a>Unassigned Requests{% if count_unassigned != 0 %}
+        <a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}"><span class="badge badge-danger ml-2">{{ count_unassigned }}</span></a>
+        {% else %}
+        <a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}">None</a>
+        {% endif %}
+    </a><br><br></p>
+<p>
 Overdue Requests
 {% if count >= 10 %}
-<a style="margin: 50px; color: red;" href="{% url 'home-report' %}" target="_blank">&uarr; {{ count }}</a>{% else %}
-<a style="margin: 50px; color: green;" href="{% url 'home-report' %}" target="_blank">&darr; {{ count }}</a>
+<a class="alignright" style="color: red;" href="{% url 'home-report' %}" target="_blank">&uarr; {{ count }}</a>{% else %}
+<a  class="alignright" style="color: green;" href="{% url 'home-report' %}" target="_blank">&darr; {{ count }}</a>
 {% endif %}
+</p>
 
-<br>
-{% for list in team_member_query %}{{ list.user_permit.get_full_name }}<br>{% endfor %}</p>
+<p>{% for list in request_per_IT_team %}
+{% for a in list %}<p class="alignleft">{{ a.request_request__assigned_to }}</p> <p class="alignright">   {{ a.count_assigned }}
+</p><br>{% endfor %}<br>{% endfor %}</p>
+
+
+
 </div>
 </div>
 </div>

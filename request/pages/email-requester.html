@@ -1,0 +1,36 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>Email-Requester</title>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container p-5">
+
+<form method="POST" action="">
+{% csrf_token %}
+<br>
+<div class="form-group col-md-8 mb-0">
+To: {{ get_pk.user_request.email }}
+</div>
+    <br>
+<div class="form-group col-md-8 mb-0">
+Cc: {{ assign.assigned_to}}
+</div>
+<br>
+<div class="form-group col-md-8 mb-0">
+{{ forms.subject|as_crispy_field }}
+</div>
+<div class="form-group col-md-8 mb-0">
+{{ forms.email|as_crispy_field }}
+</div>
+<div class="form-group col-md-6 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Send</button>
+</div>
+</form>
+</div>
+{% endblock %}
