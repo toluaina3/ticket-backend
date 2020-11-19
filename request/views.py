@@ -14,6 +14,7 @@ from clean_code.tasks import send_mail_request_raised, \
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 
 
 # Create your views here.
@@ -289,11 +290,11 @@ def assign_task(request, pk=None):
                         send_mail_task_assigned_user(user=i, assign=post.assigned_to)
                     # log to show date and time of task assigned to an IT staff
                     logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
-                    messages.success(request, 'Your request has been assigned')
-                    return redirect('request')
+                    messages.success(request, 'Request has been assigned to {}'.format(post.assigned_to))
+                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             # if assign form is None, return message
             messages.error(request, 'You can not perform the request, Assign the task to a team')
-            return redirect('request')
+            return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
     else:
         forms = Request_Forms(instance=get_pk.request_request)
         query = request_table.objects.get(id=get_pk.request_request.pk)
