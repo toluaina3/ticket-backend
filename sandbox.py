@@ -15,3 +15,7 @@ print(a.split(' ')[1])
 <!-- MDB core JavaScript -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
 {% endcached %}
+
+
+
+

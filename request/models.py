@@ -64,10 +64,10 @@ class priority_tables(models.Model):
 
 
 class sla(models.Model):
-    # id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     sla_category = models.CharField(max_length=30, blank=False, unique=True)
     sla_time = models.IntegerField(blank=False)
-    #sla_priority = models.ForeignKey(priority_table, on_delete=models.CASCADE, related_name='sla_priority_table_link')
+    sla_priority = models.ForeignKey(priority_tables, on_delete=models.CASCADE, related_name='sla_priority_table_link')
 
     # sla_status = models.CharField(max_length=10, blank=False, default=True)
 
@@ -79,7 +79,7 @@ class sla(models.Model):
 
 
 class request_table(models.Model):
-    #id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
     # create task to send email to IT team
     request_open = models.DateTimeField(null=True)
@@ -113,7 +113,7 @@ class request_table(models.Model):
 
 # many to many relation for users to make multiple requests
 class user_request_table(models.Model):
-    #id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     user_request = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_request_link')
     request_request = models.ForeignKey(request_table, on_delete=models.CASCADE, related_name='request_request_link')
 
@@ -123,4 +123,4 @@ class user_request_table(models.Model):
     def __str__(self):
         return '{} | {}'.format(self.user_request.get_full_name, self.request_request.request)
 
-# class response_time_table(models.Model):
+

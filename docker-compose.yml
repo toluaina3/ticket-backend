@@ -52,7 +52,7 @@ services:
 
     celery:
       build: .
-      command: celery -A clean_code worker -l INFO
+      command: celery -A clean_code worker -l INFO --uid 100 #python manage.py migrate --noinput
       volumes:
       - celery.worker:/usr/src/app/
       links:

@@ -1,9 +1,15 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import forms
 from .models import User
-from request.models import roles_table, bio, request_table, sla
+from request.models import roles_table, bio, request_table, sla, priority_tables
 from django.db.models.query_utils import Q
 from cacheops import invalidate_model
+
+
+class Priority_Form(forms.ModelForm):
+    class Meta:
+        model = priority_tables
+        exclude = ['priority_pk']
 
 
 class Email_Requester(forms.Form):
@@ -35,9 +41,6 @@ class Assign_Forms(forms.ModelForm):
     choices.insert(0, ('', 'None'))
     assigned_to = forms.ChoiceField(choices=choices, required=False)
     copy_team = forms.ChoiceField(choices=choices, required=False)
-
-
-
 
     class Meta:
         model = request_table

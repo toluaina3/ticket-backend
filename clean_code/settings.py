@@ -141,15 +141,17 @@ CACHEOPS = {
     # cache `user role` and `permission` get queries for 15 minutes
     'request.roles_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 15},
     # cache bio database queries for 15 minute
-    'request.bio': {'ops': 'get', 'timeout': 60 * 15},
+    'request.bio': {'ops': 'get', 'timeout': 60 * 60},
     # cache the user request for 1 hour
     'request.request_table': {'ops': 'get', 'timeout': 60 * 60 * 1},
     # cache permission database queries for 1 day
     'request.permission': {'ops': 'get', 'timeout': 60 * 60 * 24},
     # cache the user request for 1 hour
     'request.user_request_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 1},
-    # cache the sla for 1 hour
+    # cache the sla for 5 days
     'request.sla': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 5},
+    # cache the user request for 1 day
+    'request.priority_tables': {'ops': 'get', 'timeout': 60 * 60 * 1},
 
 }
 

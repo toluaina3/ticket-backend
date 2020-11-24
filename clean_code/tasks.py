@@ -99,8 +99,8 @@ def send_mail_task_assigned_user(user, assign):
 def send_mail_task_response_requester(user, subject, email):
     UserModel = get_user_model()
     user = UserModel.objects.get(pk=user)
-    subject = ''
-    email = ''
+    subject = subject
+    email = email
     try:
         send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
         logging.info('Response Email sent to Requester {}'.format(user.email))

@@ -69,7 +69,8 @@ def login_home(request):
     ren = date_parse[:10]
     den = date_parse[13:]
     team = request.GET.get('team-member')
-    permission_query = permission.objects.get(user_permit_id=request.user.pk).role_permit.role
+
+    permission_query = permission.objects.filter(user_permit_id=request.user.pk).values('role_permit__role')
     # reporting for admin view
     if permission_query == 'Admin' and not None:
         # if range input is true to get status of request
@@ -536,6 +537,20 @@ def login_home(request):
         # db attribute that are not callable is cached
         role = qs
     else:
+        request_open = 0
+        request_closed = 0
+        request_completed = 0
+        request_cancelled = 0
+        request_email = 0
+        request_authentication = 0
+        request_software = 0
+        request_network = 0
+        request_printer = 0
+        request_phone = 0
+        request_location_abuja = 0
+        request_location_ph = 0
+        request_location_ikoyi = 0
+        request_location_lagos = 0
         role = 'No role Assigned'
     user = request.user.get_full_name()
     context = {'role': role, 'user': user, 'request_open': request_open,

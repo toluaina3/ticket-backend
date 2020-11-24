@@ -79,6 +79,10 @@ Page {{ pagy.number }} of {{ pagy.paginator.num_pages }}
 {{ form.sla_time|as_crispy_field  }}
 </div>
 
+<div class="form-group col-md-4 mb-0">
+{{ form2.priority_field|as_crispy_field  }}
+</div>
+
 <div class="form-group col-md-12 mb-0">
     <br>
 <button type="submit" class="btn btn-primary" style="background: #001952">Create</button>

@@ -3,10 +3,11 @@ from verify.models import User
 from request.models import permission
 from django.views.generic.list import ListView
 from verify.forms import UpdateBioForms, RoleForm
-from .models import bio, roles_table, user_request_table, request_table, sla
+from .models import bio, roles_table, user_request_table, request_table, sla, priority_tables
 from django.contrib import messages
 from django.db import transaction
-from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, Sla_request_Form, Email_Requester
+from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, \
+    Sla_request_Form, Email_Requester, Priority_Form
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
@@ -138,7 +139,7 @@ def list_user_request(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
-    role = request.user.permit_user.get(user_permit_id=get_pk).role_permit
+    role = request.user.permit_user.filter(user_permit_id=get_pk).values('role_permit')
     if request.user.permit_user.filter(role_permit__role='User').only().cache():
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \
@@ -196,7 +197,6 @@ def list_user_request(request, pk=None):
             pagy = 'No Requests'
             context = {'pagy': pagy}
         return render(request, 'list_user_requests.html', context)
-
     # view for IT team, only assigned task are seen.
     elif request.user.permit_user.filter(role_permit__role='IT team').only().cache():
         over = []
@@ -235,7 +235,7 @@ def list_user_request(request, pk=None):
             context = {'get_pk': get_pk, 'pagy': pagy, 'role': role, 'loop': loop}
             return render(request, 'list_user_requests.html', context)
     messages.error(request, 'Role has not been assigned')
-    return render(request, 'list_user_requests.html')
+    return render(request, 'list_user_requests.html', {'get_pk': get_pk})
 
 
 def assign_task(request, pk=None):
@@ -293,7 +293,7 @@ def assign_task(request, pk=None):
                     messages.success(request, 'Request has been assigned to {}'.format(post.assigned_to))
                     return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             # if assign form is None, return message
-            messages.error(request, 'You can not perform the request, Assign the task to a team')
+            messages.error(request, 'Assign the task to a team member')
             return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
     else:
         forms = Request_Forms(instance=get_pk.request_request)
@@ -308,27 +308,32 @@ def send_email_requester(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = user_request_table.objects.get(pk=pk)
-    assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
+    team_id = request.user.get_full_name
     if request.method == 'POST':
         assign = Assign_Forms(request.POST)
         subject = request.POST['subject']
         email = request.POST['email']
         requester_email = get_pk.user_request.pk
-        # copy team member in the email
         if assign.is_valid():
-            post = assign.save(commit=False)
-            copy_team = post.assigned_to
-            requester_email = get_pk.user_request.pk
-            send_email = requester_email + copy_team
-            send_mail_task_response_requester(user=send_email, subject=subject, email=email)
-            messages.success(request, 'Email was sent to user')
-            return redirect('request')
+                post = assign.save(commit=False)
+                post_str = str(post.copy_team)
+                requester_email = get_pk.user_request.pk
+                query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
+                                            & Q(last_name=post_str.split(' ')[1])).values('user_pk')
+                get_key = query[0]['user_pk']
+                list_email = [requester_email, get_key]
+                for i in list_email:
+                    send_mail_task_response_requester(user=i, subject=subject, email=email)
+                    messages.success(request, 'Message sent')
+                return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
+        # copy team member in the email
         send_mail_task_response_requester(user=requester_email, subject=subject, email=email)
-        messages.success(request, 'Email was sent to user')
-        return redirect('request')
+        messages.success(request, 'Message sent')
+        return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
     forms = Email_Requester()
     assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
-    return render(request, 'email-requester.html', {'forms': forms, 'get_pk': get_pk, 'assign': assign})
+    return render(request, 'email-requester.html', {'forms': forms, 'get_pk': get_pk,
+                                                    'assign': assign, 'team_id': team_id})
 
 
 def user_confirm_request(request, pk=None):
@@ -358,11 +363,16 @@ def sla_create(request):
         return redirect('login')
     if request.method == 'POST':
         form = Sla_Form(request.POST)
-        if form.is_valid():
+        form2 = Priority_Form(request.POST)
+        if form.is_valid() and form2.is_valid():
             post = form.save(commit=False)
+            get_form = (form2.data['priority_field'])
+            save_priority = priority_tables.objects.create(priority_field=get_form)
             if not sla.objects.filter(sla_category=post.sla_category):
-                post.save()
+                sla.objects.create(sla_category=post.sla_category,
+                                   sla_time=post.sla_time, sla_priority_id=save_priority.pk)
                 invalidate_model(sla)
+                invalidate_model(priority_tables)
                 messages.success(request, 'SLA has been updated')
                 return redirect('sla-view')
         # form will throw error of validation
@@ -379,7 +389,8 @@ def sla_create(request):
     except EmptyPage:
         pagy = paginator.page(paginator.num_pages)
     form = Sla_Form()
-    context = {'form': form, 'pagy': pagy}
+    form2 = Priority_Form()
+    context = {'form': form, 'pagy': pagy, 'form2': form2}
     return render(request, 'sla_create.html', context)
 
 
@@ -410,10 +421,24 @@ def sla_update(request, pk=None):
     if request.method == 'POST':
         sla_category = request.POST['sla_category']
         sla_time = request.POST['sla_time']
+        priority_field = request.POST['priority_field']
         if sla.objects.filter(sla_category=sla_category):
-            sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time)
+            print(priority_field)
+            # if priority level has not been created, then create here
+            if not priority_tables.objects.filter(priority_field=priority_field):
+                key = priority_tables.objects.create(priority_field=priority_field)
+                print(key.priority_pk)
+                sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time, sla_priority_id=key)
+                messages.success(request, 'SLA has been updated')
+                invalidate_model(sla)
+                invalidate_model(priority_tables)
+                return redirect('sla-view')
+            # if priority exists
+            key = priority_tables.objects.get(priority_field=priority_field).pk
+            sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time, sla_priority_id=key)
             messages.success(request, 'SLA has been updated')
             invalidate_model(sla)
+            invalidate_model(priority_tables)
             return redirect('sla-view')
         messages.error(request, 'Can not update service')
         return redirect('sla-view')
@@ -427,7 +452,8 @@ def sla_update(request, pk=None):
     except EmptyPage:
         pagy = paginator.page(paginator.num_pages)
     form = Sla_Form(instance=get_pk)
-    context = {'form': form, 'pagy': pagy}
+    form2 = Priority_Form(instance=get_pk)
+    context = {'form': form, 'pagy': pagy, 'form2': form2}
     return render(request, 'sla_update.html', context)
 
 
