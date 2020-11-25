@@ -20,7 +20,7 @@ import debug_toolbar
 
 # if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('ktull/', admin.site.urls),
     re_path(r'^', include('verify.urls')),
     re_path(r'^', include('request.urls')),
     re_path(r'^__debug__/', include(debug_toolbar.urls)),

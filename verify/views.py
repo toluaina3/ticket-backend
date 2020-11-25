@@ -72,7 +72,7 @@ def login_home(request):
 
     permission_query = permission.objects.filter(user_permit_id=request.user.pk).values('role_permit__role')
     # reporting for admin view
-    if permission_query == 'Admin' and not None:
+    if permission_query[0]['role_permit__role'] == 'Admin' and not None:
         # if range input is true to get status of request
         if date:
             request_status_query = user_request_table.objects.filter(request_request__request_open__range=[ren, den]) \
@@ -313,8 +313,11 @@ def login_home(request):
         else:
             pass
 
+    # reporting for the IT team view
+    #if permission_query[0]['role_permit__role'] == 'IT team' and not None:
+
     # view for the users
-    elif permission_query == 'User' and not None:
+    elif permission_query[0]['role_permit__role'] == 'User' and not None:
         user_query = user_request_table.objects.filter(user_request_id=request.user.pk)
         date = request.GET.get('daterange')
         date_parse = str(date).replace('/', '-')
