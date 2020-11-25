@@ -29,6 +29,7 @@ data-dismiss="alert" aria-label="Close">
 <th scope="col">#</th>
 <th scope="col">Service</th>
 <th scope="col">Response time(Minutes)</th>
+<th scope="col">Priority</th>
 </tr>
 </thead>
 
@@ -39,6 +40,7 @@ data-dismiss="alert" aria-label="Close">
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.sla_category}}</td>
 <td> {{ list.sla_time }}</td>
+<td>{{ list.sla_priority.priority_field }}</td>
 </tr>
 {% endfor %}
 </tbody>

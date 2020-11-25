@@ -423,11 +423,9 @@ def sla_update(request, pk=None):
         sla_time = request.POST['sla_time']
         priority_field = request.POST['priority_field']
         if sla.objects.filter(sla_category=sla_category):
-            print(priority_field)
             # if priority level has not been created, then create here
             if not priority_tables.objects.filter(priority_field=priority_field):
                 key = priority_tables.objects.create(priority_field=priority_field)
-                print(key.priority_pk)
                 sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time, sla_priority_id=key)
                 messages.success(request, 'SLA has been updated')
                 invalidate_model(sla)
