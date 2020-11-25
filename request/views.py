@@ -192,6 +192,7 @@ def list_user_request(request, pk=None):
             except EmptyPage:
                 pagy = paginator.page(paginator.num_pages)
             context = {'get_pk': get_pk, 'pagy': pagy, 'role': role, 'loop': loop}
+            messages.success(request, 'Welcome, Admin')
             return render(request, 'list_user_requests.html', context)
         else:
             pagy = 'No Requests'
@@ -243,6 +244,7 @@ def assign_task(request, pk=None):
         return redirect('login')
     get_pk = user_request_table.objects.get(pk=pk)
     time = timezone.now()
+    global due
     # display the due date for the request
     if get_pk is not None:
         get_time = get_pk.request_request.request_open + \
@@ -250,6 +252,8 @@ def assign_task(request, pk=None):
         # show the overdue request with color code on the view table
         if timezone.now() > get_time and not None:
             due = get_time
+        else:
+            due = 'Within SLA time'
     if request.method == 'POST':
         assign = Assign_Forms(request.POST)
         if assign.is_valid():
@@ -318,14 +322,17 @@ def send_email_requester(request, pk=None):
                 post = assign.save(commit=False)
                 post_str = str(post.copy_team)
                 requester_email = get_pk.user_request.pk
-                query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
+                try:
+                    query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
                                             & Q(last_name=post_str.split(' ')[1])).values('user_pk')
-                get_key = query[0]['user_pk']
-                list_email = [requester_email, get_key]
-                for i in list_email:
-                    send_mail_task_response_requester(user=i, subject=subject, email=email)
-                    messages.success(request, 'Message sent')
-                return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
+                    get_key = query[0]['user_pk']
+                    list_email = [requester_email, get_key]
+                    for i in list_email:
+                        send_mail_task_response_requester(user=i, subject=subject, email=email)
+                        messages.success(request, 'Message sent')
+                    return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
+                except IndexError:
+                    pass
         # copy team member in the email
         send_mail_task_response_requester(user=requester_email, subject=subject, email=email)
         messages.success(request, 'Message sent')
@@ -399,7 +406,7 @@ def sla_view(request):
         return redirect('login')
     global query
     if sla.objects.all() is not None:
-        query = sla.objects.all().order_by('sla_category')
+        query = sla.objects.all().order_by('sla_category').cache()
     elif sla.objects.all is None:
         messages.error(request, 'No service added')
     paginator = Paginator(query, 8)
