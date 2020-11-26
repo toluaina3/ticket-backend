@@ -139,7 +139,7 @@ def list_user_request(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = get_object_or_404(User, pk=pk)
-    role = request.user.permit_user.filter(user_permit_id=get_pk).values('role_permit')
+    role = request.user.permit_user.filter(user_permit_id=get_pk).values('role_permit__role')[0]['role_permit__role']
     if request.user.permit_user.filter(role_permit__role='User').only().cache():
         if user_request_table.objects.filter(user_request_id=get_pk) is not None:
             request_list = user_request_table.objects. \

@@ -258,7 +258,7 @@ $(function() {
 
 
 
-{% if permission_query == 'Admin' %}
+{% if permit == 'Admin' %}
 <div class="col-sm-4" >
 <br>
 <div class="card bg-light; modal-fade" style="max-width: 20rem; box-shadow: 1px 1px 5px #b3b3b3; max-height: 50rem; font-family: 'Lato Black',fantasy">
@@ -296,7 +296,7 @@ Overdue Requests
 
 
 
-{% if permission_query != 'User' %}
+{% if permit != 'User' %}
 <script>
 //doughnut
 var ctxD = document.getElementById("doughnutChart").getContext('2d');

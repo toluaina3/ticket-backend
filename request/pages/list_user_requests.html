@@ -46,23 +46,23 @@ data-dismiss="alert" aria-label="Close">
 <th scope="col">Assigned</th>
 <th scope="col">Cc</th>
 <th>Status</th>
-{% if role.role != 'User' %}<th>Priority</th>{% endif %}
+{% if role != 'User' %}<th>Priority</th>{% endif %}
 </tr>
 </thead>
 <tbody>
 
-{% if role.role == 'Admin' or role.role == 'IT team'  %}
+{% if role == 'Admin' or role == 'IT team'  %}
 {% for o,list in loop %}
 <tr {% if o == 'Yes' and list.request_request.close_request == 'Open' %}style="background: #e2f1fc" {% else %} {% endif %}>
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.request_request.request_open }}</td>
 <td>{{ list.request_request.sla_category }}</td>
-<td><a {% if role.role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
+<td><a {% if role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
 <td>{{ list.user_request.bio_user_relation.branch }}</td>
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
-<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role.role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
-{% if role.role != 'User' %}<td></td>{% endif %}
+<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
+{% if role != 'User' %}<td>{{ list.request_request.sla_category.sla_priority.priority_field }}</td>{% endif %}
 </tr>
 {% endfor %}
 
@@ -72,12 +72,12 @@ data-dismiss="alert" aria-label="Close">
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.request_request.request_open }}</td>
 <td>{{ list.request_request.sla_category }}</td>
-<td><a {% if role.role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
+<td><a {% if role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
 <td>{{ list.user_request.bio_user_relation.branch }}</td>
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
-<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role.role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
-{% if role.role != 'User' %}<td></td>{% endif %}
+<td>{{ list.request_request.close_request }} {% if list.request_request.close_request == 'Completed' and role == 'User' %}<a href="{% url 'user-confirm'  pk=list.request_request_id %}" class="badge badge-success">Confirm</a>{% endif %}</td>
+{% if role != 'User' %}<td></td>{% endif %}
 </tr>
 {% endfor %}
 {% endif %}

@@ -71,6 +71,7 @@ def login_home(request):
     team = request.GET.get('team-member')
 
     permission_query = permission.objects.filter(user_permit_id=request.user.pk).values('role_permit__role')
+    permit = permission_query[0]['role_permit__role']
     # reporting for admin view
     if permission_query[0]['role_permit__role'] == 'Admin' and not None:
         # if range input is true to get status of request
@@ -278,38 +279,49 @@ def login_home(request):
             elif search_filler('IP Phone', query_no_category) is None:
                 request_phone = 0
         # total number of requests per regions
-        query_requests_regions = User.objects.values('bio_user_relation__branch') \
-            .annotate(count_request_location=Count('bio_user_relation__branch'))
-        if query_requests_regions is not None:
+        # filter out the regional locations
+        location = User.objects.all().values('bio_user_relation__branch')
+        list_region = []
+        for i in location:
+            region = i['bio_user_relation__branch']
+            list_region.append(region)
+        if location is not None:
+            query_requests_regions = user_request_table.objects.\
+                filter(user_request__bio_user_relation__branch__in=list_region)\
+                .values('user_request__bio_user_relation__branch')\
+                .annotate(count_request_location=Count('user_request__bio_user_relation__branch'))
+            print(query_requests_regions)
+            print(list_region)
+            if query_requests_regions is not None:
 
-            def search_filler(value, dictionary):
-                for key in dictionary:
-                    if key['bio_user_relation__branch'] == value:
-                        return key
+                def search_filler(value, dictionary):
+                    for key in dictionary:
+                        if key['user_request__bio_user_relation__branch'] == value:
+                            return key
 
-            if search_filler('Abuja', query_requests_regions):
-                dell = search_filler('Abuja', query_requests_regions)
-                request_location_abuja = dell['count_request_location']
-            elif search_filler('Abuja', query_requests_regions) is None:
-                request_location_abuja = 0
+                if search_filler('Abuja', query_requests_regions):
+                    dell = search_filler('Abuja', query_requests_regions)
+                    request_location_abuja = dell['count_request_location']
+                elif search_filler('Abuja', query_requests_regions) is None:
+                    request_location_abuja = 0
 
-            if search_filler('Lagos', query_requests_regions):
-                dell = search_filler('Lagos', query_requests_regions)
-                request_location_lagos = dell['count_request_location']
-            elif search_filler('Lagos', query_requests_regions) is None:
-                request_location_lagos = 0
+                if search_filler('Lagos', query_requests_regions):
+                    dell = search_filler('Lagos', query_requests_regions)
+                    request_location_lagos = dell['count_request_location']
+                elif search_filler('Lagos', query_requests_regions) is None:
+                    request_location_lagos = 0
 
-            if search_filler('Ikoyi', query_requests_regions):
-                dell = search_filler('Ikoyi', query_requests_regions)
-                request_location_ikoyi = dell['count_request_location']
-            elif search_filler('Ikoyi', query_requests_regions) is None:
-                request_location_ikoyi = 0
+                if search_filler('Ikoyi', query_requests_regions):
+                    dell = search_filler('Ikoyi', query_requests_regions)
+                    request_location_ikoyi = dell['count_request_location']
+                elif search_filler('Ikoyi', query_requests_regions) is None:
+                    request_location_ikoyi = 0
 
-            if search_filler('Port-Harcourt', query_requests_regions):
-                dell = search_filler('Port-Harcourt', query_requests_regions)
-                request_location_ph = dell['count_request_location']
-            elif search_filler('Port-Harcourt', query_requests_regions) is None:
-                request_location_ph = 0
+                if search_filler('Port-Harcourt', query_requests_regions):
+                    dell = search_filler('Port-Harcourt', query_requests_regions)
+                    request_location_ph = dell['count_request_location']
+                elif search_filler('Port-Harcourt', query_requests_regions) is None:
+                    request_location_ph = 0
         else:
             pass
 
@@ -571,7 +583,8 @@ def login_home(request):
                'request_location_ph': request_location_ph,
                'permission_query': permission_query, 'count': count,
                'overdue_query': overdue_query,
-               'count_unassigned': count_unassigned, 'request_per_IT_team': request_per_IT_team}
+               'count_unassigned': count_unassigned, 'request_per_IT_team': request_per_IT_team,
+               'permit': permit}
     return render(request, 'home_login.html', context)
 
 
