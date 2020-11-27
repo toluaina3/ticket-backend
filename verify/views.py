@@ -290,8 +290,6 @@ def login_home(request):
                 filter(user_request__bio_user_relation__branch__in=list_region)\
                 .values('user_request__bio_user_relation__branch')\
                 .annotate(count_request_location=Count('user_request__bio_user_relation__branch'))
-            print(query_requests_regions)
-            print(list_region)
             if query_requests_regions is not None:
 
                 def search_filler(value, dictionary):

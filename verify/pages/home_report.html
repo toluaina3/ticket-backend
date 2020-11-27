@@ -29,6 +29,7 @@
 <th scope="col">Assigned</th>
 <th scope="col">Cc</th>
 <th>Status</th>
+<th>Priority</th>
 </tr>
 </thead>
 <tbody>
@@ -42,6 +43,7 @@
 <td>{{ list.request_request.assigned_to }}</td>
 <td>{{ list.request_request.copy_team }}</td>
 <td>{{ list.request_request.close_request }}</td>
+<td>{{ list.request_request.sla_category.sla_priority.priority_field }}</td>
 </tr>
 {% endfor %}
 

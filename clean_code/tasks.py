@@ -95,6 +95,7 @@ def send_mail_task_assigned_user(user, assign):
     except ConnectionError:
         logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
 
+
 @app.task
 def send_mail_task_response_requester(user, subject, email):
     UserModel = get_user_model()
@@ -197,3 +198,4 @@ def response_time_sla():
     # condition if sla category is None
     except sla.DoesNotExist:
         pass
+# task to close request if not confirmed after one day

@@ -124,3 +124,13 @@ class user_request_table(models.Model):
         return '{} | {}'.format(self.user_request.get_full_name, self.request_request.request)
 
 
+class custom_email_message(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    assign_email = models.TextField\
+        (max_length=2000, blank=True, verbose_name='Type your request assign email to Customers')
+    complete_email = models.TextField\
+        (max_length=2000, blank=True, verbose_name='Type your request complete email to Customers')
+    closed_request_email = models.TextField\
+        (max_length=2000, blank=True, verbose_name='Type your request closed email to Customers')
+    cancelled_request_email = models.TextField \
+        (max_length=2000, blank=True, verbose_name='Type your request cancelled email to Customers')
