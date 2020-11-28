@@ -20,7 +20,7 @@ class Email_Requester(forms.Form):
 class Sla_request_Form(forms.ModelForm):
     invalidate_model(sla)
     choice = [(sla.sla_category, sla.sla_category) for sla in (sla.objects.all().order_by('sla_category').only())]
-    sla_category = forms.ChoiceField(choices=choice, required=True)
+    sla_category = forms.ChoiceField(choices=choice, required=True, label='Category')
 
     class Meta:
         model = sla
@@ -35,6 +35,7 @@ class Sla_Form(forms.ModelForm):
 
 class Assign_Forms(forms.ModelForm):
     # get the it team from query into the choice field
+    invalidate_model(roles_table)
     choices = [(user.first_name + ' ' + user.last_name, user.get_full_name)
                for user in
                (User.objects.filter(Q(permit_user__role_permit__role='IT team')).order_by('first_name').only())]
@@ -50,7 +51,8 @@ class Assign_Forms(forms.ModelForm):
 class Request_Forms(forms.ModelForm):
     class Meta:
         model = request_table
-        exclude = ['request_time_closed', 'request_open', 'confirm', 'sla_category']
+        exclude = ['request_time_closed', 'request_open', 'confirm', 'sla_category',
+                   'request_time_update', 'request_time_started']
 
 
 class Bio_Form(forms.ModelForm):

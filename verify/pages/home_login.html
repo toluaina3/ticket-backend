@@ -72,7 +72,7 @@ type: 'bar',
 data: {
 labels: ["Open", "Completed", "Closed", "Cancelled"],
 datasets: [{
-label: 'Number of Requests',
+label: 'Number of Tickets',
 
 data: [{{ request_open }}, {{ request_completed }}, {{ request_closed }}, {{ request_cancelled }}],
 
@@ -160,7 +160,7 @@ type: 'bar',
 data: {
 labels: ["Email", "Software", "Authentication", "Network", "IP Phone", "Printer"],
 datasets: [{
-label: 'Requests per Service',
+label: 'Tickets per Service',
 
 data: [{{ request_email }}, {{ request_software }}, {{ request_authentication }},
     {{ request_network }}, {{ request_phone }}, {{ request_printer }}],
@@ -265,14 +265,14 @@ $(function() {
 <div class="card-header" style="background: #17cefc; text-align: center" ><strong>SITREP</strong> </div>
 <div class="card-body">
 <p class="card-title" style=" font-size: medium">
-    <a>Unassigned Requests{% if count_unassigned != 0 %}
+    <a>Unassigned Tickets{% if count_unassigned != 0 %}
         <a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}"><span class="badge badge-danger ml-2">{{ count_unassigned }}</span></a>
         {% else %}
         <a href="http://127.0.0.1:8000/request/list/{{ request.user.user_pk }}">None</a>
         {% endif %}
     </a><br><br></p>
 <p>
-Overdue Requests
+Overdue Tickets
 {% if count >= 10 %}
 <a class="alignright" style="color: red;" href="{% url 'home-report' %}" target="_blank">&uarr; {{ count }}</a>{% else %}
 <a  class="alignright" style="color: green;" href="{% url 'home-report' %}" target="_blank">&darr; {{ count }}</a>

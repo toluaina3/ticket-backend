@@ -111,6 +111,7 @@ def requests_user_create(request, pk=None):
     if request.method == 'POST':
         forms = Request_Forms(request.POST)
         sla_category = Sla_request_Form(request.POST).data['sla_category']
+        print(forms.errors)
         if forms.is_valid():
             post = forms.save(commit=False)
             get_category = sla.objects.get(sla_category=sla_category)
@@ -126,7 +127,7 @@ def requests_user_create(request, pk=None):
             return redirect('request')
         else:
             messages.error(request, 'Form is invalid')
-            return redirect('request-create')
+            return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_pk]))
     else:
         forms = Request_Forms()
         sla_category = Sla_request_Form()
@@ -271,14 +272,22 @@ def assign_task(request, pk=None):
                 # log to show date and time of task assigned to an IT staff
                 logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
                 invalidate_model(request_table)
-                return redirect('request')
+                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             elif post.close_request == 'Cancelled':
                 request_table.objects.filter(id=get_pk.request_request.pk) \
                     .update(close_request='Cancelled')
                 send_mail_task_cancelled_request(user=get_pk.user_request.pk)
                 messages.success(request, 'The request has been cancelled, user has been notified')
                 invalidate_model(request_table)
-                return redirect('request')
+                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+            elif post.close_request == 'Started':
+                request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .update(close_request='Started', request_time_started=timezone.now())
+                send_mail_task_cancelled_request(user=get_pk.user_request.pk)
+                messages.success(request, 'Ticket started, user has been notified')
+                invalidate_model(request_table)
+                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+            # logic to close the request without user confirmation
 
             else:
                 # invalidate the model request table not suitable for multiples database calls
@@ -295,14 +304,19 @@ def assign_task(request, pk=None):
                     # log to show date and time of task assigned to an IT staff
                     logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
                     messages.success(request, 'Request has been assigned to {}'.format(post.assigned_to))
+                    # track the time tickets are assigned to the team
+                    request_table.objects.filter(id=get_pk.request_request.pk). \
+                        update(request_time_update=timezone.now())
+                    invalidate_model(request_table)
                     return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             # if assign form is None, return message
             messages.error(request, 'Assign the task to a team member')
-            return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+            return HttpResponseRedirect(reverse('request-list', args=[get_pk.pk]))
     else:
         forms = Request_Forms(instance=get_pk.request_request)
         query = request_table.objects.get(id=get_pk.request_request.pk)
         assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
+        assigned_time = ''
         context = {'forms': forms, 'assign': assign, 'query': query,
                    'get_pk': get_pk, 'due': due, 'time': time}
         return render(request, 'assign_task.html', context)
@@ -351,7 +365,7 @@ def user_confirm_request(request, pk=None):
         # user click confirm button, request updates to close
         if not request_table.objects.get(id=get_pk.pk).confirm:
             request_table.objects.filter(id=get_pk.pk) \
-                .update(close_request='Closed', confirm='True')
+                .update(close_request='Closed', confirm='True', request_time_closed=timezone.now())
             # invalidate the request table
             invalidate_model(request_table)
             messages.success(request, 'Your request has been closed')

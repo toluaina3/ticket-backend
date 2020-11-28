@@ -80,16 +80,18 @@ class sla(models.Model):
 
 class request_table(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    request = models.TextField(max_length=2000, blank=False, help_text='What is your request')
+    request = models.TextField(max_length=2000, blank=False, help_text='What is your request?', verbose_name='Subject')
     # create task to send email to IT team
     request_open = models.DateTimeField(null=True)
+    request_time_update = models.DateTimeField(null=True)
+    request_time_started = models.DateTimeField(null=True)
     request_time_closed = models.DateTimeField(null=True)
     # not included in the form, auto fills
     # create task to send email to user for assigned request
     assigned_to = models.CharField(max_length=40, blank=True, default='None')
     copy_team = models.CharField(max_length=40, blank=True, help_text='Copy team members')
     # view only to IT team
-    close = (('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'))
+    close = (('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'), ('Started', 'Started'))
     confirm = models.BooleanField(default=False)
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
     sla_category = models.ForeignKey(sla, on_delete=models.CASCADE, related_name='request_sla_request')

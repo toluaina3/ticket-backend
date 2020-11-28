@@ -51,9 +51,12 @@ style="color: goldenrod" {% elif get_pk.request_request.sla_category.sla_priorit
 style="color: green"{% else %}style="color: red"{% endif %}>
 {{ get_pk.request_request.sla_category.sla_priority.priority_field }}<br></a>
 Phone: {% if get_pk.user_request.bio_user_relation %}{{ get_pk.user_request.bio_user_relation.phone }}{% else %}Not Available{% endif %}<br>
-Due Date: {% if get_pk.request_request.close_request == 'Open' %}{% if time > due %}<a style="color: red">{{ due }}{% else %}<a style="color: green">{{ due }}{% endif %}
-    {% elif get_pk.request_request.close_request == 'Closed' %}Resolved{% else %}Not Applicable{% endif %}</a></p><br>
+Due Date: {% if get_pk.request_request.close_request == 'Open' or get_pk.request_request.close_request == 'Started' %}
+{% if time > due %}<a style="color: red">{{ due }}{% else %}<a style="color: green">{{ due }}{% endif %}
+{% elif get_pk.request_request.close_request == 'Closed' %}Resolved{% else %}Not Applicable{% endif %}</a></p><br>
 <h5 style="color: #001952"><strong>{{ get_pk.user_request.get_full_name.upper }}</strong></h5>
+{% if get_pk.request_request.request_time_update is not None %}<p style="color: #001952; font-size: small">
+Ticket assigned at {{ get_pk.request_request.request_time_update }}{% else %}{% endif %}</p>
 <br><br><br><br><br>
 <p class="card-text">{{ query }}</p>
 <br>
@@ -82,11 +85,27 @@ Due Date: {% if get_pk.request_request.close_request == 'Open' %}{% if time > du
 <div class="form-group col-md-2 mb-0">
 <br>
 {{ assign.close_request|as_crispy_field }}
+Ticket can be closed after 24 Hours without user's confirmation
 </div>
 
 <div class="form-group col-md-12 mb-0">
 <button type="submit" class="btn btn-primary" style="background: #001952">Update</button>
 </div>
+
+{% elif query.close_request == 'Started'  %}
+<div class="form-group col-md-2 mb-0">
+<br>
+{{ assign.copy_team|as_crispy_field }}
+</div>
+<div class="form-group col-md-2 mb-0">
+<br>
+{{ assign.close_request|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-12 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Update</button>
+</div>
+
 {% elif query.close_request == 'Closed'  %}
 
 {% endif %}

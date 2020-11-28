@@ -525,12 +525,12 @@ def login_home(request):
                     overdue_query.append(overdue_list)
                 else:
                     pass
-            # number of unassigned requests
-            if listing.request_request.assigned_to == 'None':
+            # number of unassigned requests and logic to capture empty strings
+            if listing.request_request.assigned_to == 'None' or listing.request_request.assigned_to == '':
                 count_unassigned = count_unassigned + 1
             # number of requests per IT team
             else:
-                pass
+                count_unassigned = 0
     # query the database and follow the same naming convention of order to relate
     get_IT_uuid = permission.objects.all().filter(role_permit__role='IT team') \
         .values('user_permit__first_name', 'user_permit__last_name').order_by('user_permit__first_name').cache()
