@@ -91,7 +91,8 @@ class request_table(models.Model):
     assigned_to = models.CharField(max_length=40, blank=True, default='None')
     copy_team = models.CharField(max_length=40, blank=True, help_text='Copy team members')
     # view only to IT team
-    close = (('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'), ('Started', 'Started'))
+    close = (('Cancelled', 'Cancelled'), ('Open', 'Open'), ('Completed', 'Completed'),
+             ('Started', 'Started'), ('Closed', 'Closed'))
     confirm = models.BooleanField(default=False)
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
     sla_category = models.ForeignKey(sla, on_delete=models.CASCADE, related_name='request_sla_request')

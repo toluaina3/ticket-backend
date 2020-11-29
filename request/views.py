@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404,reverse
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from verify.models import User
 from request.models import permission
 from django.views.generic.list import ListView
@@ -259,35 +259,82 @@ def assign_task(request, pk=None):
         assign = Assign_Forms(request.POST)
         if assign.is_valid():
             post = assign.save(commit=False)
-            request_table.objects.filter(id=get_pk.request_request.pk). \
-                update(assigned_to=post.assigned_to,
-                       copy_team=post.copy_team, close_request=post.close_request)
+            # request_table.objects.filter(id=get_pk.request_request.pk). \
+            # update(assigned_to=post.assigned_to,
+            # copy_team=post.copy_team, close_request=post.close_request)
             # if the request is completed by IT team, send a mail to user to click the confirm button
             # so the IT team can close the request
             if post.close_request == 'Completed':
-                send_mail_task_completed_user(user=get_pk.user_request.pk, assign=post.assigned_to)
-                # update the completed time field in the database
-                request_table.objects.filter(id=get_pk.request_request.pk).update(request_time_closed=timezone.now())
-                messages.success(request, 'You completed the request')
-                # log to show date and time of task assigned to an IT staff
-                logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
-                invalidate_model(request_table)
-                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                gold = request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .values('close_request')
+                get_format = gold[0]['close_request']
+                if get_format == 'Started':
+                    request_table.objects.filter(id=get_pk.request_request.pk). \
+                        update(close_request=post.close_request, request_time_closed=timezone.now())
+                    send_mail_task_completed_user(user=get_pk.user_request.pk, assign=post.assigned_to)
+                    # update the completed time field in the database
+                    request_table.objects.filter(id=get_pk.request_request.pk).update(request_time_closed=timezone.now())
+                    messages.success(request, 'You completed the request')
+                    # log to show date and time of task assigned to an IT staff
+                    logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
+                    invalidate_model(request_table)
+                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                messages.error(request, 'Invalid request, Only Stared tickets can be completed')
+                return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             elif post.close_request == 'Cancelled':
-                request_table.objects.filter(id=get_pk.request_request.pk) \
-                    .update(close_request='Cancelled')
-                send_mail_task_cancelled_request(user=get_pk.user_request.pk)
-                messages.success(request, 'The request has been cancelled, user has been notified')
-                invalidate_model(request_table)
-                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                gold = request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .values('close_request')
+                get_format = gold[0]['close_request']
+                if get_format == 'Open' or get_format == 'Started':
+                    request_table.objects.filter(id=get_pk.request_request.pk) \
+                        .update(close_request='Cancelled', request_time_closed=timezone.now())
+                    send_mail_task_cancelled_request(user=get_pk.user_request.pk)
+                    messages.success(request, 'The request has been cancelled, user has been notified')
+                    invalidate_model(request_table)
+                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                messages.error(request, 'Invalid request, Only Opened or Stared tickets can be cancelled')
+                return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             elif post.close_request == 'Started':
-                request_table.objects.filter(id=get_pk.request_request.pk) \
-                    .update(close_request='Started', request_time_started=timezone.now())
-                send_mail_task_cancelled_request(user=get_pk.user_request.pk)
-                messages.success(request, 'Ticket started, user has been notified')
-                invalidate_model(request_table)
-                return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                gold = request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .values('close_request')
+                silver = request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .values('assigned_to')
+                get_silver = silver[0]['assigned_to']
+                get_format = gold[0]['close_request']
+                if get_format == 'Open' and get_silver != 'None':
+                    request_table.objects.filter(id=get_pk.request_request.pk) \
+                        .update(close_request='Started', request_time_started=timezone.now(),
+                                copy_team=post.copy_team)
+                    send_mail_task_cancelled_request(user=get_pk.user_request.pk)
+                    messages.success(request, 'Ticket started, user has been notified')
+                    invalidate_model(request_table)
+                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                messages.error(request, 'Invalid request, assigned open tickets can only be started ')
+                return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             # logic to close the request without user confirmation
+            elif post.close_request == 'Closed':
+                gold = request_table.objects.filter(id=get_pk.request_request.pk) \
+                    .values('close_request')
+                get_format = gold[0]['close_request']
+                if get_format == 'Completed':
+                    get_time_format = request_table.objects.filter(id=get_pk.request_request.pk) \
+                        .values('request_time_closed')
+                    get_time_completed = get_time_format[0]['request_time_closed']
+                    hour_to_close = get_time_completed + timezone.timedelta(hours=24)
+                    if timezone.now() > hour_to_close:
+                        request_table.objects.filter(id=get_pk.request_request.pk) \
+                            .update(close_request='Closed', request_time_closed=timezone.now())
+                        invalidate_model(request_table)
+                        messages.success(request, 'Ticket closed by the Support team')
+                        send_mail_task_closed_user(user=get_pk.user_request.pk)
+                        return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                    else:
+                        messages.error(request, 'Ticket can be after closed 24 hours without customers confirmation ')
+                        return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+                else:
+                    messages.error(request, 'Ticket must be completed before closure')
+                    return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+
 
             else:
                 # invalidate the model request table not suitable for multiples database calls
@@ -295,23 +342,30 @@ def assign_task(request, pk=None):
                 invalidate_model(request_table)
                 # send email to user and assignee when request has been assigned to a staff
                 if post.assigned_to:
-                    get_team = User.objects.filter(Q(first_name=str(post.assigned_to.split(' ')[0]))
-                                                   & Q(last_name=str(post.assigned_to.split(' ')[1])))
-                    it_team_assigned_pk = get_team.values('user_pk')[0]['user_pk']
-                    lead = [get_pk.user_request.pk, it_team_assigned_pk]
-                    for i in lead:
-                        send_mail_task_assigned_user(user=i, assign=post.assigned_to)
-                    # log to show date and time of task assigned to an IT staff
-                    logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
-                    messages.success(request, 'Request has been assigned to {}'.format(post.assigned_to))
-                    # track the time tickets are assigned to the team
-                    request_table.objects.filter(id=get_pk.request_request.pk). \
-                        update(request_time_update=timezone.now())
-                    invalidate_model(request_table)
-                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                    try:
+                        get_team = User.objects.filter(Q(first_name=str(post.assigned_to.split(' ')[0]))
+                                                       & Q(last_name=str(post.assigned_to.split(' ')[1])))
+                        it_team_assigned_pk = get_team.values('user_pk')[0]['user_pk']
+                        lead = [get_pk.user_request.pk, it_team_assigned_pk]
+                        request_table.objects.filter(id=get_pk.request_request.pk). \
+                            update(assigned_to=post.assigned_to,
+                                   copy_team=post.copy_team, close_request=post.close_request)
+                        for i in lead:
+                            send_mail_task_assigned_user(user=i, assign=post.assigned_to)
+                        # log to show date and time of task assigned to an IT staff
+                        logging_info_task(msg='Task has been assigned to {}'.format(post.assigned_to))
+                        messages.success(request, 'Request has been assigned to {}'.format(post.assigned_to))
+                        # track the time tickets are assigned to the team
+                        request_table.objects.filter(id=get_pk.request_request.pk). \
+                            update(request_time_update=timezone.now())
+                        invalidate_model(request_table)
+                        return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                    except IndexError:
+                        messages.error(request, 'Invalid request operation')
+                        # return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             # if assign form is None, return message
             messages.error(request, 'Assign the task to a team member')
-            return HttpResponseRedirect(reverse('request-list', args=[get_pk.pk]))
+            return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
     else:
         forms = Request_Forms(instance=get_pk.request_request)
         query = request_table.objects.get(id=get_pk.request_request.pk)
@@ -333,20 +387,20 @@ def send_email_requester(request, pk=None):
         email = request.POST['email']
         requester_email = get_pk.user_request.pk
         if assign.is_valid():
-                post = assign.save(commit=False)
-                post_str = str(post.copy_team)
-                requester_email = get_pk.user_request.pk
-                try:
-                    query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
+            post = assign.save(commit=False)
+            post_str = str(post.copy_team)
+            requester_email = get_pk.user_request.pk
+            try:
+                query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
                                             & Q(last_name=post_str.split(' ')[1])).values('user_pk')
-                    get_key = query[0]['user_pk']
-                    list_email = [requester_email, get_key]
-                    for i in list_email:
-                        send_mail_task_response_requester(user=i, subject=subject, email=email)
-                        messages.success(request, 'Message sent')
-                    return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
-                except IndexError:
-                    pass
+                get_key = query[0]['user_pk']
+                list_email = [requester_email, get_key]
+                for i in list_email:
+                    send_mail_task_response_requester(user=i, subject=subject, email=email)
+                    messages.success(request, 'Message sent')
+                return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
+            except IndexError:
+                pass
         # copy team member in the email
         send_mail_task_response_requester(user=requester_email, subject=subject, email=email)
         messages.success(request, 'Message sent')
@@ -447,7 +501,8 @@ def sla_update(request, pk=None):
             # if priority level has not been created, then create here
             if not priority_tables.objects.filter(priority_field=priority_field):
                 key = priority_tables.objects.create(priority_field=priority_field)
-                sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time, sla_priority_id=key)
+                sla.objects.filter(id=get_pk.pk).update(sla_category=sla_category, sla_time=sla_time,
+                                                        sla_priority_id=key)
                 messages.success(request, 'SLA has been updated')
                 invalidate_model(sla)
                 invalidate_model(priority_tables)
