@@ -61,7 +61,7 @@ def login_home(request):
         request_phone, request_printer, request_location_abuja, \
         request_location_ikoyi, request_location_lagos, \
         request_location_ph, count, \
-        overdue_query, count_unassigned, request_per_IT_team
+        overdue_query, count_unassigned, request_per_IT_team, request_started
 
     # variables for date range picker
     date = request.GET.get('daterange')
@@ -91,6 +91,12 @@ def login_home(request):
                 request_open = dell['count_request_status']
             elif search_filler('Open', request_status_query) is None:
                 request_open = 0
+
+            if search_filler('Started', request_status_query):
+                dell = search_filler('Started', request_status_query)
+                request_started = dell['count_request_status']
+            elif search_filler('Started', request_status_query) is None:
+                request_started = 0
 
             if search_filler('Closed', request_status_query):
                 dell = search_filler('Closed', request_status_query)
@@ -127,6 +133,12 @@ def login_home(request):
             elif search_filler('Open', query_no_date) is None:
                 request_open = 0
 
+            if search_filler('Started', query_no_date):
+                dell = search_filler('Started', query_no_date)
+                request_started = dell['count_request_status']
+            elif search_filler('Started', query_no_date) is None:
+                request_started = 0
+
             if search_filler('Closed', query_no_date):
                 dell = search_filler('Closed', query_no_date)
                 request_closed = dell['count_request_status']
@@ -160,6 +172,12 @@ def login_home(request):
                 request_open = dell['count_request_status']
             elif search_filler('Open', query_no_date) is None:
                 request_open = 0
+
+            if search_filler('Started', query_no_date):
+                dell = search_filler('Started', query_no_date)
+                request_started = dell['count_request_status']
+            elif search_filler('Started', query_no_date) is None:
+                request_started = 0
 
             if search_filler('Closed', query_no_date):
                 dell = search_filler('Closed', query_no_date)
@@ -351,6 +369,12 @@ def login_home(request):
             elif search_filler('Open', request_status_query) is None:
                 request_open = 0
 
+            if search_filler('Started', request_status_query):
+                dell = search_filler('Started', request_status_query)
+                request_started = dell['count_request_status']
+            elif search_filler('Started', request_status_query) is None:
+                request_started = 0
+
             if search_filler('Closed', request_status_query):
                 dell = search_filler('Closed', request_status_query)
                 request_closed = dell['count_request_status']
@@ -385,6 +409,12 @@ def login_home(request):
                 request_open = dell['count_request_status']
             elif search_filler('Open', request_status_query) is None:
                 request_open = 0
+
+            if search_filler('Started', request_status_query):
+                dell = search_filler('Started', request_status_query)
+                request_started = dell['count_request_status']
+            elif search_filler('Started', request_status_query) is None:
+                request_started = 0
 
             if search_filler('Closed', request_status_query):
                 dell = search_filler('Closed', request_status_query)
@@ -515,7 +545,7 @@ def login_home(request):
         overdue_query = []
         for listing in overdue_request:
             # logic: if request if open and time is overdue
-            if listing.request_request.close_request == 'Open':
+            if listing.request_request.close_request == 'Open' or listing.request_request.close_request == 'Started':
                 get_time = listing.request_request.request_open + \
                            timezone.timedelta(minutes=listing.request_request.sla_category.sla_time)
                 # show the request with color code on the view table
@@ -528,9 +558,8 @@ def login_home(request):
             # number of unassigned requests and logic to capture empty strings
             if listing.request_request.assigned_to == 'None' or listing.request_request.assigned_to == '':
                 count_unassigned = count_unassigned + 1
-            # number of requests per IT team
-            else:
-                count_unassigned = 0
+        else:
+            pass
     # query the database and follow the same naming convention of order to relate
     get_IT_uuid = permission.objects.all().filter(role_permit__role='IT team') \
         .values('user_permit__first_name', 'user_permit__last_name').order_by('user_permit__first_name').cache()
@@ -551,6 +580,7 @@ def login_home(request):
         role = qs
     else:
         request_open = 0
+        request_started = 0
         request_closed = 0
         request_completed = 0
         request_cancelled = 0
@@ -582,7 +612,7 @@ def login_home(request):
                'permission_query': permission_query, 'count': count,
                'overdue_query': overdue_query,
                'count_unassigned': count_unassigned, 'request_per_IT_team': request_per_IT_team,
-               'permit': permit}
+               'permit': permit, 'request_started': request_started}
     return render(request, 'home_login.html', context)
 
 
@@ -666,7 +696,7 @@ def home_report(request):
         overdue_query = []
         for listing in overdue_request:
             # logic: if request if open and time is overdue
-            if listing.request_request.close_request == 'Open':
+            if listing.request_request.close_request == 'Open' or listing.request_request.close_request == 'Started':
                 get_time = listing.request_request.request_open + \
                            timezone.timedelta(minutes=listing.request_request.sla_category.sla_time)
                 # show the request with color code on the view table

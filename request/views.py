@@ -11,11 +11,13 @@ from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, \
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
-    send_mail_task_closed_user, send_mail_task_cancelled_request, send_mail_task_response_requester
+    send_mail_task_closed_user, send_mail_task_cancelled_request, \
+    send_mail_task_response_requester, send_mail_task_assigned_started
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.db.models import Q
 from django.http import HttpResponseRedirect
+from request.ticket_number import ticket_number
 
 
 # Create your views here.
@@ -115,7 +117,8 @@ def requests_user_create(request, pk=None):
         if forms.is_valid():
             post = forms.save(commit=False)
             get_category = sla.objects.get(sla_category=sla_category)
-            request_add = request_table.objects.create(request=post.request, sla_category=get_category)
+            request_add = request_table.objects.create(request=post.request, sla_category=get_category,
+                                                       ticket_number=ticket_number())
             user_request_table.objects.create(user_request_id=get_pk.user_pk, request_request_id=request_add.pk)
             messages.success(request, 'Request has been Submitted')
             # task of logged message
@@ -219,12 +222,10 @@ def list_user_request(request, pk=None):
 
                         if timezone.now() > get_time and not None:
                             overdue_request = 'Yes'
-                            print(overdue_request)
                             over.append(overdue_request)
                         # show the request with color code on the view table
                         elif timezone.now() < get_time and not None:
                             overdue_request = 'No'
-                            print(overdue_request)
                             over.append(overdue_request)
                         else:
                             pass
@@ -278,8 +279,8 @@ def assign_task(request, pk=None):
                     # log to show date and time of task assigned to an IT staff
                     logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
                     invalidate_model(request_table)
-                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
-                messages.error(request, 'Invalid request, Only Stared tickets can be completed')
+                    return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+                messages.error(request, '!! Invalid request, Only Stared tickets can be completed !!')
                 return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             elif post.close_request == 'Cancelled':
                 gold = request_table.objects.filter(id=get_pk.request_request.pk) \
@@ -291,8 +292,9 @@ def assign_task(request, pk=None):
                     send_mail_task_cancelled_request(user=get_pk.user_request.pk)
                     messages.success(request, 'The request has been cancelled, user has been notified')
                     invalidate_model(request_table)
-                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
-                messages.error(request, 'Invalid request, Only Opened or Stared tickets can be cancelled')
+                    return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+                messages.error(request, '!! Invalid request, Only Opened or Stared tickets can be cancelled !!')
+                logging_info_task(msg='Ticket cancelled by  {}'.format(get_pk.user_request.pk))
                 return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             elif post.close_request == 'Started':
                 gold = request_table.objects.filter(id=get_pk.request_request.pk) \
@@ -305,11 +307,12 @@ def assign_task(request, pk=None):
                     request_table.objects.filter(id=get_pk.request_request.pk) \
                         .update(close_request='Started', request_time_started=timezone.now(),
                                 copy_team=post.copy_team)
-                    send_mail_task_cancelled_request(user=get_pk.user_request.pk)
+                    send_mail_task_assigned_started(user=get_pk.user_request.pk, assign=post.assigned_to)
                     messages.success(request, 'Ticket started, user has been notified')
                     invalidate_model(request_table)
-                    return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
-                messages.error(request, 'Invalid request, assigned open tickets can only be started ')
+                    logging_info_task(msg='Ticket Started by  {}'.format(post.assigned_to))
+                    return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
+                messages.error(request, '!! Invalid request, assigned open tickets can only be started !!')
                 return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
             # logic to close the request without user confirmation
             elif post.close_request == 'Closed':
@@ -326,16 +329,15 @@ def assign_task(request, pk=None):
                             .update(close_request='Closed', request_time_closed=timezone.now())
                         invalidate_model(request_table)
                         messages.success(request, 'Ticket closed by the Support team')
+                        logging_info_task(msg='Ticket Closed')
                         send_mail_task_closed_user(user=get_pk.user_request.pk)
-                        return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                        return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
                     else:
-                        messages.error(request, 'Ticket can be after closed 24 hours without customers confirmation ')
+                        messages.error(request, '!! Ticket can be after closed 24 hours without customers confirmation !!')
                         return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
                 else:
-                    messages.error(request, 'Ticket must be completed before closure')
+                    messages.error(request, '!! Ticket must be completed before closure !!')
                     return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
-
-
             else:
                 # invalidate the model request table not suitable for multiples database calls
                 # try to invalidate object should work
@@ -359,12 +361,14 @@ def assign_task(request, pk=None):
                         request_table.objects.filter(id=get_pk.request_request.pk). \
                             update(request_time_update=timezone.now())
                         invalidate_model(request_table)
-                        return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
+                        logging_info_task(msg='Ticket assigned to {}'.format(post.assigned_to))
+                        # fix error of user changing uuid
+                        return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
                     except IndexError:
                         messages.error(request, 'Invalid request operation')
                         # return HttpResponseRedirect(reverse('request-list', args=[get_pk.user_request.user_pk]))
             # if assign form is None, return message
-            messages.error(request, 'Assign the task to a team member')
+            messages.error(request, '!! Assign the task to a team member !!')
             return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
     else:
         forms = Request_Forms(instance=get_pk.request_request)
@@ -449,10 +453,12 @@ def sla_create(request):
                 invalidate_model(sla)
                 invalidate_model(priority_tables)
                 messages.success(request, 'SLA has been updated')
+                logging_info_task(msg='SLA created')
                 return redirect('sla-view')
         # form will throw error of validation
         # statement starts from valid
         messages.error(request, 'SLA service exists')
+        logging_info_task(msg='Error creating SLA due to existing record')
         return redirect('sla-create')
     query = sla.objects.all().order_by('sla_category')
     paginator = Paginator(query, 8)
@@ -505,6 +511,7 @@ def sla_update(request, pk=None):
                                                         sla_priority_id=key)
                 messages.success(request, 'SLA has been updated')
                 invalidate_model(sla)
+                logging_info_task(msg='SLA updated with Priority')
                 invalidate_model(priority_tables)
                 return redirect('sla-view')
             # if priority exists
@@ -515,6 +522,7 @@ def sla_update(request, pk=None):
             invalidate_model(priority_tables)
             return redirect('sla-view')
         messages.error(request, 'Can not update service')
+        logging_info_task(msg='SLA update error')
         return redirect('sla-view')
     query = sla.objects.all().order_by('sla_category')
     paginator = Paginator(query, 8)
@@ -563,6 +571,7 @@ def search_request_list_query(request):
                                                          | Q(user_request__last_name__exact=search_field)
                                                          | Q(request_request__assigned_to__icontains=search_field)
                                                          | Q(request_request__assigned_to__exact=search_field)
+                                                         | Q(request_request__ticket_number__exact=search_field)
                                                          | Q(
             request_request__sla_category__sla_category__exact=search_field)
                                                          | Q(

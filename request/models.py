@@ -95,6 +95,7 @@ class request_table(models.Model):
              ('Started', 'Started'), ('Closed', 'Closed'))
     confirm = models.BooleanField(default=False)
     close_request = models.CharField(max_length=15, blank=True, choices=close, default='Open')
+    ticket_number = models.CharField(max_length=13, blank=True)
     sla_category = models.ForeignKey(sla, on_delete=models.CASCADE, related_name='request_sla_request')
 
     class Meta:

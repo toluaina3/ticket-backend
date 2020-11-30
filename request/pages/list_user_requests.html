@@ -12,7 +12,7 @@
 <button type="submit" class="btn btn-primary" style="background: #001952">View Tickets</button>
 <a class="btn btn-primary" style="background: #001952" href="{% url 'request-create' pk=get_pk.user_pk%}">Create Ticket</a>
 <br>
-<div class="container p-5">
+<div class="container p-2">
 {% if messages %}
 {% for message in messages %}
 <div class="alert alert-dark" role="alert">
@@ -35,11 +35,12 @@ data-dismiss="alert" aria-label="Close">
 </nav>
 </div>
 {% if pagy != 'No Requests' %}
-<table class="table table-hover">
+<table class="table table-hover table-responsive-lg">
 <thead>
 <tr>
 <th scope="col">#</th>
 <th scope="col">Time</th>
+<th scope="col">Ticket Id</th>
 <th scope="col">Subject</th>
 <th scope="col">Requester</th>
 <th scope="col">Location</th>
@@ -53,9 +54,10 @@ data-dismiss="alert" aria-label="Close">
 
 {% if role == 'Admin' or role == 'IT team'  %}
 {% for o,list in loop %}
-<tr {% if o == 'Yes' and list.request_request.close_request == 'Open' %}style="background: #e2f1fc" {% else %} {% endif %}>
+<tr {% if o == 'Yes' and list.request_request.close_request == 'Open' or list.request_request.close_request == 'Started' %}style="background: #e2f1fc" {% else %} {% endif %}>
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.request_request.request_open }}</td>
+<td>{{ list.request_request.ticket_number }}</td>
 <td>{{ list.request_request.sla_category }}</td>
 <td><a {% if role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
 <td>{{ list.user_request.bio_user_relation.branch }}</td>

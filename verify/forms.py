@@ -52,7 +52,7 @@ class Request_Forms(forms.ModelForm):
     class Meta:
         model = request_table
         exclude = ['request_time_closed', 'request_open', 'confirm', 'sla_category',
-                   'request_time_update', 'request_time_started']
+                   'request_time_update', 'request_time_started', 'ticket_number']
 
 
 class Bio_Form(forms.ModelForm):

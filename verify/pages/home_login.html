@@ -70,11 +70,11 @@ var ctxB = document.getElementById("barChart").getContext('2d');
 var myBarChart = new Chart(ctxB, {
 type: 'bar',
 data: {
-labels: ["Open", "Completed", "Closed", "Cancelled"],
+labels: ["Open", "Started", "Completed", "Closed", "Cancelled"],
 datasets: [{
 label: 'Number of Tickets',
 
-data: [{{ request_open }}, {{ request_completed }}, {{ request_closed }}, {{ request_cancelled }}],
+data: [{{ request_open }},{{ request_started }}, {{ request_completed }}, {{ request_closed }}, {{ request_cancelled }}],
 
 backgroundColor: [
 'rgba(85,118,241,0.62)',
