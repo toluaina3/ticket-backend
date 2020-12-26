@@ -214,4 +214,4 @@ def response_time_sla():
     # condition if sla category is None
     except sla.DoesNotExist:
         pass
-# task to close request if not confirmed after one day
+

@@ -54,6 +54,9 @@ INSTALLED_APPS = [
     'django_celery_beat',
 
 
+
+
+
 ]
 
 MIDDLEWARE = [
@@ -152,6 +155,8 @@ CACHEOPS = {
     'request.sla': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 5},
     # cache the user request for 1 hour
     'request.priority_tables': {'ops': 'get', 'timeout': 60 * 60 * 1},
+    # cache the ticket message for 30 minutes
+    'request.ticket_message_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 30},
 
 }
 

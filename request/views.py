@@ -3,11 +3,12 @@ from verify.models import User
 from request.models import permission
 from django.views.generic.list import ListView
 from verify.forms import UpdateBioForms, RoleForm
-from .models import bio, roles_table, user_request_table, request_table, sla, priority_tables
+from .models import bio, roles_table, user_request_table, request_table, sla, priority_tables, response_table, \
+    ticket_message_table
 from django.contrib import messages
 from django.db import transaction
 from verify.forms import Request_Forms, Assign_Forms, RegisterForms, Sla_Form, \
-    Sla_request_Form, Email_Requester, Priority_Form
+    Sla_request_Form, Response_Form, Priority_Form
 from cacheops import invalidate_model
 from clean_code.tasks import send_mail_request_raised, \
     send_mail_request_raised_it_team, logging_info_task, send_mail_task_assigned_user, send_mail_task_completed_user, \
@@ -274,7 +275,8 @@ def assign_task(request, pk=None):
                         update(close_request=post.close_request, request_time_closed=timezone.now())
                     send_mail_task_completed_user(user=get_pk.user_request.pk, assign=post.assigned_to)
                     # update the completed time field in the database
-                    request_table.objects.filter(id=get_pk.request_request.pk).update(request_time_closed=timezone.now())
+                    request_table.objects.filter(id=get_pk.request_request.pk).update(
+                        request_time_closed=timezone.now())
                     messages.success(request, 'You completed the request')
                     # log to show date and time of task assigned to an IT staff
                     logging_info_task(msg='Task completed by  {}'.format(post.assigned_to))
@@ -333,7 +335,8 @@ def assign_task(request, pk=None):
                         send_mail_task_closed_user(user=get_pk.user_request.pk)
                         return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
                     else:
-                        messages.error(request, '!! Ticket can be after closed 24 hours without customers confirmation !!')
+                        messages.error(request,
+                                       '!! Ticket can be after closed 24 hours without customers confirmation !!')
                         return HttpResponseRedirect(reverse('assign-task', args=[get_pk.pk]))
                 else:
                     messages.error(request, '!! Ticket must be completed before closure !!')
@@ -378,41 +381,6 @@ def assign_task(request, pk=None):
         context = {'forms': forms, 'assign': assign, 'query': query,
                    'get_pk': get_pk, 'due': due, 'time': time}
         return render(request, 'assign_task.html', context)
-
-
-def send_email_requester(request, pk=None):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    get_pk = user_request_table.objects.get(pk=pk)
-    team_id = request.user.get_full_name
-    if request.method == 'POST':
-        assign = Assign_Forms(request.POST)
-        subject = request.POST['subject']
-        email = request.POST['email']
-        requester_email = get_pk.user_request.pk
-        if assign.is_valid():
-            post = assign.save(commit=False)
-            post_str = str(post.copy_team)
-            requester_email = get_pk.user_request.pk
-            try:
-                query = User.objects.filter(Q(first_name=post_str.split(' ')[0])
-                                            & Q(last_name=post_str.split(' ')[1])).values('user_pk')
-                get_key = query[0]['user_pk']
-                list_email = [requester_email, get_key]
-                for i in list_email:
-                    send_mail_task_response_requester(user=i, subject=subject, email=email)
-                    messages.success(request, 'Message sent')
-                return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
-            except IndexError:
-                pass
-        # copy team member in the email
-        send_mail_task_response_requester(user=requester_email, subject=subject, email=email)
-        messages.success(request, 'Message sent')
-        return HttpResponseRedirect(reverse('email-requester', args=[get_pk.pk]))
-    forms = Email_Requester()
-    assign = Assign_Forms(instance=request_table.objects.get(id=get_pk.request_request.pk))
-    return render(request, 'email-requester.html', {'forms': forms, 'get_pk': get_pk,
-                                                    'assign': assign, 'team_id': team_id})
 
 
 def user_confirm_request(request, pk=None):
@@ -590,3 +558,67 @@ def search_request_list_query(request):
         return render(request, 'search_request_query.html', context)
     messages.error(request, 'Data not found')
     return redirect('request-list')
+
+
+def request_response(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = get_object_or_404(user_request_table, pk=pk)
+    query = ticket_message_table.objects.filter(ticket_request_id=get_pk.request_request.pk) \
+        .values('ticket_message__response', 'ticket_message__time_response').order_by('-ticket_message__time_response')
+    list_query = []
+    list_time_query = []
+    packed = zip(list_query, list_time_query)
+    if query is not None:
+        for i in query:
+            real_query = i['ticket_message__response']
+            time_query = i['ticket_message__time_response']
+            list_query.append(real_query)
+            list_time_query.append(time_query)
+    else:
+        pass
+    context = {'get_pk': get_pk, 'query': query, 'packed': packed}
+    return render(request, 'request_response.html', context)
+
+
+def compose_response(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = get_object_or_404(user_request_table, pk=pk)
+    if request.method == 'POST':
+        form = Response_Form(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.save()
+            # get the date and time of the post
+            response_table.objects.filter(id=post.id).update(time_response=timezone.now())
+            ticket_message_table.objects.create(ticket_request_id=get_pk.request_request.pk, ticket_message_id=post.id)
+            invalidate_model(ticket_message_table)
+            return HttpResponseRedirect(reverse('ticket-message', args=[get_pk.pk]))
+        else:
+            pass
+    form = Response_Form()
+    context = {'form': form, 'get_pk': get_pk}
+    return render(request, 'compose_response.html', context)
+
+
+# from the ticket number, get the time logs for a request
+def request_time_log(request, pk=None):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    get_pk = get_object_or_404(user_request_table, pk=pk)
+    global query_time_closed, query_request, query_time_start, query_time_assigned, query_time_open
+    query = request_table.objects.filter(pk=get_pk.request_request.pk).values('request', 'request_time_update', 'request_time_started',
+                                                              'request_time_closed', 'request_open')
+    print(query)
+    for i in query:
+        query_request = i['request']
+        print(query_request)
+        query_time_assigned = i['request_time_update']
+        query_time_start = i['request_time_started']
+        query_time_closed = i['request_time_closed']
+        query_time_open = i['request_open']
+    context = {'query_time_closed':query_time_closed,'query_request': query_request,
+               'query_time_start': query_time_start,'query_time_assigned': query_time_assigned,
+               'query_time_open': query_time_open}
+    return render(request, 'ticket_time_logs.html', context)

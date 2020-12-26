@@ -1,0 +1,34 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>Ticket Response</title>
+{% endblock %}
+
+{% block content %}
+<br><br>
+<div class="container p-2">
+<div class="card">
+<div class="card-body">
+<form method="POST">
+{% csrf_token %}
+
+<div class="form-group col-md-6 mb-0">
+<br>
+    <h5>{{ get_pk.user_request.get_full_name}}</h5>
+    <br>
+{{ form.response|as_crispy_field }}
+</div>
+
+<div class="form-group col-md-12 mb-0">
+<button type="submit" class="btn btn-primary" style="background: #001952">Send</button>
+</div>
+
+</form>
+
+
+</div>
+</div>
+</div>
+{% endblock %}

@@ -21,6 +21,8 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^request/sla/update/(?P<pk>[-\w\d]+)$', views.sla_update, name='sla-update'),
         re_path(r'^request/search/', views.search_request_list_query, name='request-search'),
         re_path(r'^request/sla/delete/$', views.sla_delete, name='sla-delete'),
-        re_path(r'^request/email-requester/(?P<pk>[-\w\d]+)$', views.send_email_requester, name='email-requester'),
+        re_path(r'^request/ticket/message/(?P<pk>[-\w\d]+)$', views.request_response, name='ticket-message'),
+        re_path(r'^request/ticket/message/compose/(?P<pk>[-\w\d]+)$', views.compose_response, name='ticket-compose'),
+        re_path(r'^request/ticket/logs/(?P<pk>[-\w\d]+)$', views.request_time_log, name='ticket-log'),
 
     ]

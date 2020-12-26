@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from request.models import bio, permission, roles_table, user_request_table, request_table
+from request.models import bio, permission, roles_table, user_request_table, request_table, ticket_message_table
 from verify.models import User
 from .forms import RegisterForms, RoleForm, Bio_Form
 from django.db import transaction, IntegrityError
@@ -556,10 +556,21 @@ def login_home(request):
                 else:
                     pass
             # number of unassigned requests and logic to capture empty strings
-            if listing.request_request.assigned_to == 'None' or listing.request_request.assigned_to == '':
+            if listing.request_request.assigned_to == 'None' and listing.request_request.close_request == 'Open':
                 count_unassigned = count_unassigned + 1
         else:
             pass
+    # notifications for messages
+    ticket_query = ticket_message_table.objects.all() \
+        .values('ticket_message__response').order_by('-ticket_message__time_response')
+    count_ticket_list = []
+
+    count_ticket = 0
+    for i in ticket_query:
+        count_ticket += 1
+        print(count_ticket)
+        count_ticket_list.append(count_ticket)
+    print(count_ticket_list)
     # query the database and follow the same naming convention of order to relate
     get_IT_uuid = permission.objects.all().filter(role_permit__role='IT team') \
         .values('user_permit__first_name', 'user_permit__last_name').order_by('user_permit__first_name').cache()

@@ -47,9 +47,9 @@ class permission(models.Model):
 
 
 class response_table(models.Model):
-    response = models.TextField(max_length=1000, blank=False, help_text='response to request')
-    first_response = models.DateTimeField(auto_now_add=True)
-    later_response = models.DateTimeField(auto_now=True)
+    response = models.TextField(max_length=1000, blank=False, help_text='Message to client', verbose_name='Message')
+    time_response = models.DateTimeField(null=True)
+    time_response_update = models.DateTimeField(null=True)
 
 
 class AutoDateTimeField(models.DateTimeField):
@@ -115,6 +115,13 @@ class request_table(models.Model):
         return self.request
 
 
+class ticket_message_table(models.Model):
+    ticket_uuid_message = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    ticket_message = models.ForeignKey(response_table, on_delete=models.CASCADE,
+                                       related_name='ticket_response_relation')
+    ticket_request = models.ForeignKey(request_table, on_delete=models.CASCADE, related_name='ticket_request_relation')
+
+
 # many to many relation for users to make multiple requests
 class user_request_table(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
@@ -130,11 +137,11 @@ class user_request_table(models.Model):
 
 class custom_email_message(models.Model):
     id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    assign_email = models.TextField\
+    assign_email = models.TextField \
         (max_length=2000, blank=True, verbose_name='Type your request assign email to Customers')
-    complete_email = models.TextField\
+    complete_email = models.TextField \
         (max_length=2000, blank=True, verbose_name='Type your request complete email to Customers')
-    closed_request_email = models.TextField\
+    closed_request_email = models.TextField \
         (max_length=2000, blank=True, verbose_name='Type your request closed email to Customers')
     cancelled_request_email = models.TextField \
         (max_length=2000, blank=True, verbose_name='Type your request cancelled email to Customers')

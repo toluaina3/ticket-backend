@@ -1,0 +1,36 @@
+{% extends '0nebase.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}
+<title>Ticket log</title>
+{% endblock %}
+
+{% block content %}
+    <div class="container p-2">
+    <br><br><br><br>
+
+    <table class="table table-hover table-responsive-lg">
+<thead>
+<tr>
+<th scope="col">#</th>
+    <th scope="col">Date</th>
+<th scope="col">Subject</th>
+<th scope="col">Time Assigned</th>
+<th scope="col">Start Time</th>
+<th scope="col">Closed Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <th scope="row"></th>
+    <td>{{ query_time_open }}</td>
+    <td>{{ query_request }}</td>
+    <td>{{ query_time_assigned }}</td>
+    <td>{{ query_time_start }}</td>
+    <td>{{ query_time_closed }}</td>
+</tr>
+</tbody>
+    </table>
+    </div>
+{% endblock %}

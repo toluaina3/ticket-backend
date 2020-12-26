@@ -1,9 +1,15 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import forms
 from .models import User
-from request.models import roles_table, bio, request_table, sla, priority_tables
+from request.models import roles_table, bio, request_table, sla, priority_tables, response_table
 from django.db.models.query_utils import Q
 from cacheops import invalidate_model
+
+
+class Response_Form(forms.ModelForm):
+    class Meta:
+        model = response_table
+        exclude = ['time_response', 'time_response_update']
 
 
 class Priority_Form(forms.ModelForm):

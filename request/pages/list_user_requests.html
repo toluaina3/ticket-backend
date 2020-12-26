@@ -40,7 +40,7 @@ data-dismiss="alert" aria-label="Close">
 <tr>
 <th scope="col">#</th>
 <th scope="col">Time</th>
-<th scope="col">Ticket Id</th>
+<th scope="col">Ticket Number</th>
 <th scope="col">Subject</th>
 <th scope="col">Requester</th>
 <th scope="col">Location</th>
@@ -57,7 +57,7 @@ data-dismiss="alert" aria-label="Close">
 <tr {% if o == 'Yes' and list.request_request.close_request == 'Open' or list.request_request.close_request == 'Started' %}style="background: #e2f1fc" {% else %} {% endif %}>
 <th scope="row">{{ pagy.start_index|add:forloop.counter0 }}</th>
 <td>{{ list.request_request.request_open }}</td>
-<td>{{ list.request_request.ticket_number }}</td>
+<td><a href="{% url 'ticket-log' pk=list.pk %}" style="color: black">{{ list.request_request.ticket_number }}</a></td>
 <td>{{ list.request_request.sla_category }}</td>
 <td><a {% if role != 'User' %} href="{% url 'assign-task' pk=list.pk%}" {% else %}{% endif %} style="color: black">{{ list.user_request.get_full_name }}</a></td>
 <td>{{ list.user_request.bio_user_relation.branch }}</td>

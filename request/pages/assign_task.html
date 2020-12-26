@@ -112,7 +112,8 @@ Ticket can be closed after 24 Hours without user's confirmation
 
 </form>
 </div>
-<a class="alignright" href="{% url 'email-requester' pk=get_pk.pk %}">Send Email to Requester</a>
+{% if get_pk.request_request.close_request == 'Started' or get_pk.request_request.close_request == 'Completed' %}
+<a class="alignright" href="{% url 'ticket-message' pk=get_pk.pk %}">Message</a>{% endif %}
 </div>
 </div>
 
