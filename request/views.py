@@ -607,18 +607,31 @@ def request_time_log(request, pk=None):
     if not request.user.is_authenticated:
         return redirect('login')
     get_pk = get_object_or_404(user_request_table, pk=pk)
-    global query_time_closed, query_request, query_time_start, query_time_assigned, query_time_open
-    query = request_table.objects.filter(pk=get_pk.request_request.pk).values('request', 'request_time_update', 'request_time_started',
-                                                              'request_time_closed', 'request_open')
-    print(query)
+    global query_time_closed, query_request, query_time_start, query_time_assigned, query_time_open, sla_time
+    query = request_table.objects.filter(pk=get_pk.request_request.pk).values('request', 'request_time_update',
+                                                                              'request_time_started',
+                                                                              'request_time_closed', 'request_open',
+                                                                              'sla_category__sla_time')
     for i in query:
         query_request = i['request']
-        print(query_request)
         query_time_assigned = i['request_time_update']
         query_time_start = i['request_time_started']
         query_time_closed = i['request_time_closed']
         query_time_open = i['request_open']
-    context = {'query_time_closed':query_time_closed,'query_request': query_request,
-               'query_time_start': query_time_start,'query_time_assigned': query_time_assigned,
-               'query_time_open': query_time_open}
+        query_sla = i['sla_category__sla_time']
+        get_overdue_time = query_time_open + timezone.timedelta(minutes=query_sla)
+        # if the ticket time close is greater than the the time ticket open and sla time
+        if query_time_closed is not None:
+            if query_time_closed > get_overdue_time and not None:
+                sla_time = 'Outside SLA'
+            elif query_time_closed <= get_overdue_time and not None:
+                sla_time = 'Within SLA'
+            else:
+                pass
+        else:
+            sla_time = 'Ongoing'
+
+    context = {'query_time_closed': query_time_closed, 'query_request': query_request,
+               'query_time_start': query_time_start, 'query_time_assigned': query_time_assigned,
+               'query_time_open': query_time_open, 'sla_time': sla_time}
     return render(request, 'ticket_time_logs.html', context)
