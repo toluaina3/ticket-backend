@@ -38,3 +38,6 @@ sqlparse==0.3.1
 urllib3==1.25.10
 vine==5.0.0
 wcwidth==0.2.5
+
+PyJWT~=1.7.1
+djangorestframework-jwt~=1.11.0

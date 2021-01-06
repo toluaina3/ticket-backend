@@ -5,6 +5,10 @@ services:
       #context: . #build the django web from docker file in the base directory
       #dockerfile: Dockerfile-alternate 
       container_name: cleancode_django_app
+      volumes:
+        - .:/usr/src/app/
+      # run database migration and spin up web service
+      command: bash -c 'python manage.py migrate && python manage.py runserver 0.0.0.0:8000'
       networks:
        vpcbr:
          ipv4_address: 192.100.0.4
@@ -52,7 +56,7 @@ services:
 
     celery:
       build: .
-      command: celery -A clean_code worker -l INFO --uid 100 #python manage.py migrate --noinput
+      command: celery -A clean_code worker -l INFO --uid 100
       volumes:
       - celery.worker:/usr/src/app/
       links:

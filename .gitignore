@@ -6,7 +6,8 @@ idea-gitignore.jar
 resources/templates.list
 resources/gitignore/*
 build/
-.sandbox.py
+sandbox.py
+clean_code/.env
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/

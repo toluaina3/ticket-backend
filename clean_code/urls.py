@@ -24,6 +24,7 @@ urlpatterns = [
     re_path(r'^', include('verify.urls')),
     re_path(r'^', include('request.urls')),
     re_path(r'^__debug__/', include(debug_toolbar.urls)),
+    re_path(r'^endpoints/', include('endpoints.urls')),
 
 
 ]

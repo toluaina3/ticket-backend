@@ -1,6 +1,35 @@
 from verify.models import User
 from rest_framework import serializers
-#from rest_framework_jwt.settings import api_settings
+from rest_framework_jwt.settings import api_settings
+from request.models import bio, roles_table, permission, response_table
+
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+
+
+class RoleApiSerialized(serializers.ModelSerializer):
+    class Meta:
+        model = roles_table
+        fields = ['role_id', 'role']
+
+
+class PermissionApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = permission
+        fields = ['permission_id', 'user_permit', 'role_permit']
+
+
+class ResponseTableApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = response_table
+        fields = ['response']
+
+
+class BioApiSerialized(serializers.ModelSerializer):
+    class Meta:
+        bio_user_id = serializers.CharField(read_only=True)
+        model = bio
+        fields = ['job_title', 'branch', 'phone', 'department']
 
 
 class ShowPublicUser(serializers.ModelSerializer):

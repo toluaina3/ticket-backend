@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 import environ
 from requests import ConnectionError
+import datetime
 
 env = environ.Env()
 # reading .env file
@@ -52,10 +53,9 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'crispy_forms',
     'django_celery_beat',
-
-
-
-
+    'rest_framework',
+    'endpoints',
+    'rest_framework_jwt',
 
 ]
 
@@ -222,4 +222,47 @@ EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Ticket by IT Team <noreply@ticket.com>'
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+         'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAdminUser',
+    ], 'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
 
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'endpoints.pagination.pagination_rest',
+}
+
+
+
+JWT_AUTH = {
+    'JWT_ENCODE_HANDLER':
+        'rest_framework_jwt.utils.jwt_encode_handler',
+
+    'JWT_DECODE_HANDLER':
+        'rest_framework_jwt.utils.jwt_decode_handler',
+
+    'JWT_PAYLOAD_HANDLER':
+        'rest_framework_jwt.utils.jwt_payload_handler',
+
+    'JWT_PAYLOAD_GET_USER_ID_HANDLER':
+        'rest_framework_jwt.utils.jwt_get_user_id_from_payload_handler',
+
+    'JWT_RESPONSE_PAYLOAD_HANDLER':
+    # 'rest_framework_jwt.utils.jwt_response_payload_handler',
+        'account_api.utils.jwt_response_payload_handler',
+
+    'JWT_GET_USER_SECRET_KEY': None,
+    'JWT_PUBLIC_KEY': None,
+    'JWT_PRIVATE_KEY': None,
+    'JWT_ALGORITHM': 'HS256',
+    'JWT_VERIFY': True,
+    'JWT_VERIFY_EXPIRATION': True,
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=20),
+    'JWT_ALLOW_REFRESH': True,
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    'JWT_AUTH_HEADER_PREFIX': 'Bearer',  # Bearer can be used to
+    'JWT_AUTH_COOKIE': None,
+}

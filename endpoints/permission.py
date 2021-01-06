@@ -4,14 +4,14 @@ from rest_framework import permissions
 # user can not register if authenticated
 class RegistrationPermission(permissions.BasePermission):
     # the message function overrides the default detail message
-    message = 'You are already authenticated, can not register'
+    message = 'Passed authentication, can not re-register'
 
     def has_permission(self, request, view):
         return not request.user.is_authenticated
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
-    message = 'You do not own this account, view disabled'
+    message = 'You do not own this account, edit disabled'
 
     # the methods call that only register user can edit the view
     def has_object_permission(self, request, view, obj):

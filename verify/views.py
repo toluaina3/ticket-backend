@@ -561,16 +561,16 @@ def login_home(request):
         else:
             pass
     # notifications for messages
-    ticket_query = ticket_message_table.objects.all() \
-        .values('ticket_message__response').order_by('-ticket_message__time_response')
-    count_ticket_list = []
+    #ticket_query = ticket_message_table.objects.all() \
+        #.values('ticket_message__response').order_by('-ticket_message__time_response')
+    #count_ticket_list = []
 
-    count_ticket = 0
-    for i in ticket_query:
-        count_ticket += 1
-        print(count_ticket)
-        count_ticket_list.append(count_ticket)
-    print(count_ticket_list)
+    #count_ticket = 0
+    #for i in ticket_query:
+        #count_ticket += 1
+        #print(count_ticket)
+        #count_ticket_list.append(count_ticket)
+    #print(count_ticket_list)
     # query the database and follow the same naming convention of order to relate
     get_IT_uuid = permission.objects.all().filter(role_permit__role='IT team') \
         .values('user_permit__first_name', 'user_permit__last_name').order_by('user_permit__first_name').cache()
