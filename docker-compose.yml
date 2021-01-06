@@ -55,10 +55,12 @@ services:
       restart: on-failure
 
     celery:
-      build: .
+      build:
+        context: .
+        dockerfile: celery-beat
       command: celery -A clean_code worker -l INFO --uid 100
       volumes:
-      - celery.worker:/usr/src/app/
+      - celery.workers:/usr/src/app/
       links:
         - redis-cache
       container_name: celery-worker
@@ -70,10 +72,12 @@ services:
           ipv4_address: 192.100.0.7
 
     celery-beat:
-      build: .
+      build:
+        context: .
+        dockerfile: celery-beat
       command:  celery -A clean_code  beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
       volumes:
-      - celery.beat:/usr/src/app/
+      - celery.beats:/usr/src/app/
       links:
         - redis-cache
       container_name:  celery-beat
@@ -84,12 +88,12 @@ services:
         vpcbr:
           ipv4_address: 192.100.0.8
 
-      
+
 volumes: 
   postgres.data:
   redis-data:
-  celery.worker:
-  celery.beat:
+  celery.workers:
+  celery.beats:
 networks:
   vpcbr:
     driver: bridge

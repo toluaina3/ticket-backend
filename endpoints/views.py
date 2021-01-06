@@ -6,9 +6,10 @@ from request.models import response_table
 from rest_framework.generics import CreateAPIView
 from .permission import RegistrationPermission
 from .utils import jwt_response_payload_handler
-from .serializers import RegisterApiSerialized, ResponseTableApiSerializer
+from .serializers import ResponseTableApiSerializer, BioApiSerialized
 from rest_framework_jwt.settings import api_settings
 from django.utils import timezone
+from rest_framework import status
 
 
 # API List view. use the serialized registration view below
@@ -17,13 +18,10 @@ class ResponseAPI(APIView):
     # user to re-register.
     permission_classes = [RegistrationPermission]
 
-    def post(self, request, *args, **kwargs):
-        #data = request.data
-        rest = get(request)
-        response = ResponseTableApiSerializer(rest)
-        if response.is_valid():
-            user = response_table.objects.create(response=response.data, time_response=timezone.now())
-            user.save()
-            return Response({'ok': 'yes get'}, status=201)
-        else:
-            return Response({'save': 'Not saved'}, status=401)
+    def post(self, request):
+        serializer = BioApiSerialized(data=request.data)
+        if serializer.is_valid(raise_exception=ValueError):
+            serializer.create(validated_data=request.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.error_messages,
+                        status=status.HTTP_400_BAD_REQUEST)

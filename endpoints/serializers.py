@@ -7,38 +7,7 @@ jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
-class RoleApiSerialized(serializers.ModelSerializer):
-    class Meta:
-        model = roles_table
-        fields = ['role_id', 'role']
-
-
-class PermissionApiSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = permission
-        fields = ['permission_id', 'user_permit', 'role_permit']
-
-
-class ResponseTableApiSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = response_table
-        fields = ['response']
-
-
-class BioApiSerialized(serializers.ModelSerializer):
-    class Meta:
-        bio_user_id = serializers.CharField(read_only=True)
-        model = bio
-        fields = ['job_title', 'branch', 'phone', 'department']
-
-
-class ShowPublicUser(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'first_name']
-
-
-class RegisterApiSerialized(serializers.ModelSerializer):
+class UserApiSerialized(serializers.ModelSerializer):
     # read only the password field
     password = serializers.CharField(style={'input': 'password'}, write_only=True)
     password2 = serializers.CharField(style={'input': 'password'}, write_only=True)
@@ -80,3 +49,47 @@ class RegisterApiSerialized(serializers.ModelSerializer):
         payload = jwt_payload_handler(user)
         token = jwt_encode_handler(payload)
         return token
+
+
+class BioApiSerialized(serializers.ModelSerializer):
+    bio_user_relation = UserApiSerialized(required=True)
+
+    class Meta:
+        model = bio
+        fields = {'job_title', 'branch' 'phone', 'department', 'bio_user_relation'}
+
+    def create(self, validated_data):
+        user_data = validated_data.pop('bio_user_relation')
+        bio_user_relation = UserApiSerialized.create(UserApiSerialized(), validated_data=user_data)
+        bio_link, created = bio.objects.update_or_create(user=bio_user_relation,
+                                                         job_title=validated_data.pop('job_title'),
+                                                         branch=validated_data.pop('branch'),
+                                                         phone=validated_data.pop('phone'),
+                                                         department=validated_data.pop('department'))
+        return bio_link, created
+
+
+class RoleApiSerialized(serializers.ModelSerializer):
+    class Meta:
+        model = roles_table
+        fields = ['role']
+
+
+class PermissionApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = permission
+        fields = ['permission_id', 'user_permit', 'role_permit']
+
+
+class ResponseTableApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = response_table
+        fields = ['response']
+
+
+
+
+class ShowPublicUser(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name']

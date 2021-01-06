@@ -7,7 +7,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # create the user coker with uid 1000 to grant priv to feyin
-ARG user=coker
+ARG user=celery-beat
 ARG group=docker
 ARG uid=1000
 ARG gid=1001
@@ -16,7 +16,7 @@ RUN groupadd -g ${gid} ${group}
 RUN useradd -u ${uid} -g ${group} -s /bin/sh -m ${user} # <--- the '-m' create a user home directory
 
 # Switch to user
-USER ${uid}:${gid}
+#USER ${uid}:${gid}
     
 
 
@@ -26,8 +26,8 @@ WORKDIR .:/usr/src/app/
 COPY requirements.txt ./
 RUN  pip install -r requirements.txt
 COPY . .
-EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+EXPOSE 7000
+CMD ["python", "manage.py", "runserver", "0.0.0.0:7000"]
 
 # mount the host volume to the container volume
 # docker run -v /home/feyintoluwa/PycharmProjects/clean_code/.:/usr/src/app/ clean_code_web 
