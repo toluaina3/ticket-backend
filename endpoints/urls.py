@@ -5,5 +5,6 @@ from endpoints import views
 
 if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
     urlpatterns = [
-        re_path(r'^register/$', views.ResponseAPI.as_view(), name='user-management'),
+        re_path(r'^register/$', views.RegisterAPI.as_view(), name='register-user'),
+        re_path(r'^role/$', views.CreateRole.as_view(), name='create-role'),
         ]

@@ -252,7 +252,7 @@ JWT_AUTH = {
 
     'JWT_RESPONSE_PAYLOAD_HANDLER':
     # 'rest_framework_jwt.utils.jwt_response_payload_handler',
-        'account_api.utils.jwt_response_payload_handler',
+        'endpoints.utils.jwt_response_payload_handler',
 
     'JWT_GET_USER_SECRET_KEY': None,
     'JWT_PUBLIC_KEY': None,

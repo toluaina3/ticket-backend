@@ -13,7 +13,7 @@ clean_code/.env
 __pycache__/
 *.py[cod]
 *$py.class
-
+halobiz_docker_compose.yml
 # C extensions
 *.so
 
