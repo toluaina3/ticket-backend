@@ -13,6 +13,7 @@ import os
 import environ
 from requests import ConnectionError
 import datetime
+from django.conf import settings
 
 env = environ.Env()
 # reading .env file
@@ -56,12 +57,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'endpoints',
     'rest_framework_jwt',
+    'rest_framework.authtoken',
+    #'corsheaders',
+
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    #'corsheaders.middleware.CorsMiddleware',  # cors header middleware
     # 'django.middleware.cache.UpdateCacheMiddleware',  # middleware to update cache table
     'django.middleware.common.CommonMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',   # middleware to fetch from cache table
@@ -72,7 +77,10 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
+
 ROOT_URLCONF = 'clean_code.urls'
+
+#CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
 
 TEMPLATES = [
     {
@@ -140,7 +148,7 @@ CACHEOPS_DEGRADE_ON_FAILURE = True
 
 CACHEOPS = {
     # cache `user model` get queries for 1 hour
-    'verify.User': {'ops': ('fetch', 'get'), 'timeout': 60 * 60},
+    'verify.User': {'ops': ('fetch', 'get'), 'timeout': 60 * 60 * 10},
     # cache `user role` and `permission` get queries for 15 minutes
     'request.roles_table': {'ops': ('fetch', 'get'), 'timeout': 60 * 15},
     # cache bio database queries for 1 day
@@ -224,18 +232,16 @@ DEFAULT_FROM_EMAIL = 'Ticket by IT Team <noreply@ticket.com>'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-         'rest_framework.permissions.IsAuthenticated',
+        #'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.IsAdminUser',
     ], 'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        #'rest_framework.authentication.BasicAuthentication',
 
     ),
     'DEFAULT_PAGINATION_CLASS': 'endpoints.pagination.pagination_rest',
 }
-
-
 
 JWT_AUTH = {
     'JWT_ENCODE_HANDLER':
@@ -260,9 +266,12 @@ JWT_AUTH = {
     'JWT_ALGORITHM': 'HS256',
     'JWT_VERIFY': True,
     'JWT_VERIFY_EXPIRATION': True,
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=20),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=2),
     'JWT_ALLOW_REFRESH': True,
-    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=1),
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',  # Bearer can be used to
     'JWT_AUTH_COOKIE': None,
+
 }
+
+AUTH_USER_MODEL = 'verify.User'

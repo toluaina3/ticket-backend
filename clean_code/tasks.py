@@ -10,6 +10,11 @@ import logging
 from datetime import datetime
 from request.models import request_table, sla, user_request_table
 from django.utils import timezone
+from rest_framework_jwt.settings import api_settings
+import requests
+
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
 @app.task
@@ -28,6 +33,40 @@ def send_mail_password_reset(user):
         'protocol': 'http',
     }
     email = render_to_string(email_template_name, c)
+    # super admin can not reset password by email
+    # cache query for superuser
+    try:
+        send_mail(subject, email, 'admin@tikcet.com', [user.email], fail_silently=False)
+        logging.info('Email sent to {}'.format(user.get_full_name))
+    except BadHeaderError:
+        logging.warning('BadHeaderError when trying to send email to {}'.format_map(user.get_full_name))
+    except ConnectionError:
+        logging.warning(
+            'No internet connection detected when trying to send email to {}'.format_map(user.get_full_name))
+
+
+@app.task
+def send_mail_password_reset_api(user):
+    UserModel = get_user_model()
+    user = UserModel.objects.get(pk=user)
+    subject = "Ticket Password Reset Requested"
+    email_template_name = "password/password_reset_email.txt"
+    payload = jwt_payload_handler(user)
+    token = jwt_encode_handler(payload)
+    c = {
+        "email": user.email,
+        'domain': '127.0.0.1:8000',
+        'site_name': 'Website',
+        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+        "user": user.get_full_name,
+        'token': token,
+        'protocol': 'http',
+    }
+
+    read = requests.get('http://127.0.0.1:8000/endpoints/password/update', headers={'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(token)})
+
+    print(read.status_code)
+    email = read
     # super admin can not reset password by email
     # cache query for superuser
     try:
@@ -109,7 +148,6 @@ def send_mail_task_assigned_started(user, assign):
         logging.warning('BadHeaderError when trying to send email to {}'.format(user.get_full_name))
     except ConnectionError:
         logging.warning('No internet connection detected when trying to send email to {}'.format(user.get_full_name))
-
 
 
 @app.task
@@ -214,4 +252,3 @@ def response_time_sla():
     # condition if sla category is None
     except sla.DoesNotExist:
         pass
-

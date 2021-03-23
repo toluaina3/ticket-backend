@@ -1,24 +1,73 @@
-import requests
+ if self.request.data is not None:
+                try:
+                    if bio.objects.get(phone=self.request.data['user_permit']['bio_user_relation']['phone']):
+                        role_update = roles_table.objects.filter \
+                            (role=self.request.data['role_permit']['role']).values('role_id')[0]['role_id']
+                        User.objects.filter(user_pk=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(first_name=self.request.data['user_permit']['bio_user_relation']['first_name'],
+                                    last_name=self.request.data['user_permit']['bio_user_relation']['last_name'])
+                        bio.objects.filter(bio_user_id=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(branch=self.request.data['user_permit']['bio_user_relation']['branch'],
+                                    department=self.request.data['user_permit']['bio_user_relation']['department'],
+                                    job_title=self.request.data['user_permit']['bio_user_relation']['job_title'],
+                                    phone=self.request.data['user_permit']['bio_user_relation']['phone'])
+                        permission.objects.filter(
+                            user_permit_id=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(role_permit_id=role_update)
+                        # invalidate the cache db for models
+                        response = {'status': 'success: user updated',
+                                    'code': status.HTTP_201_CREATED,
+                                    'data': serializer.data}
+                        return Response(response)
 
+                except bio.DoesNotExist:
+                    if serializer.is_valid(raise_exception=ValueError):
+                        role_update = roles_table.objects.filter \
+                            (role=self.request.data['role_permit']['role']).values('role_id')[0]['role_id']
+                        User.objects.filter(user_pk=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(first_name=self.request.data['user_permit']['bio_user_relation']['first_name'],
+                                    last_name=self.request.data['user_permit']['bio_user_relation']['last_name'])
+                        bio.objects.filter(bio_user_id=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(branch=self.request.data['user_permit']['bio_user_relation']['branch'],
+                                    department=self.request.data['user_permit']['bio_user_relation']['department'],
+                                    job_title=self.request.data['user_permit']['bio_user_relation']['job_title'],
+                                    phone=self.request.data['user_permit']['bio_user_relation']['phone'])
+                        permission.objects.filter(
+                            user_permit_id=self.request.data['user_permit']['bio_user_relation']['user_pk']) \
+                            .update(role_permit_id=role_update)
+                        # invalidate the cache db for models
+                        response = {'status': 'success: user updated',
+                                    'code': status.HTTP_201_CREATED,
+                                    'data': serializer.data}
+                        return Response(response)
 
-
-def send_simple_message():
-	return requests.post(
-		"https://api.mailgun.net/v3/mail.bigbot.ng/messages",
-		auth=("api", "6594095f0c4e08de274388f898138e8e-e5da0167-1a2144af"),
-		data={"from": "Excited User <mailgun@bigbot.ng>",
-			"to": ["toluaina3@gmail.com", "support@bigbot.ng"],
-			"subject": "Hello",
-			"text": "Testing some Mailgun awesomness!"})
-
-
-print(send_simple_message())
-
-
-
-ticketdb.uksouth.azurecontainer.io
-
-mysql -u {username} -p'{password}' \
-    -h {remote server ip or name} -P {port} \
-    -D {DB name}
-
+            if serializer.is_valid(raise_exception=ValueError):
+                get_role_permit = self.request.data['role_permit']
+                get_role = get_role_permit['role']
+                get_user_permit = self.request.data['user_permit']
+                get_user_pk = get_user_permit['user_pk']
+                get_user_first_name = get_user_permit['first_name']
+                get_user_last_name = get_user_permit['last_name']
+                get_bio_relation = get_user_permit['bio_user_relation']
+                get_branch = get_bio_relation['branch']
+                get_department = get_bio_relation['department']
+                get_job_title = get_bio_relation['job_title']
+                get_phone = get_bio_relation['phone']
+                role_update = roles_table.objects.filter(role=get_role).values('role_id')[0]['role_id']
+                User.objects.filter(user_pk=get_user_pk) \
+                    .update(first_name=get_user_first_name, last_name=get_user_last_name)
+                bio.objects.filter(bio_user_id=get_user_pk) \
+                    .update(branch=get_branch, department=get_department,
+                            job_title=get_job_title, phone=get_phone)
+                permission.objects.filter(user_permit_id=get_user_pk).update(role_permit_id=role_update)
+                # invalidate the cache db for models
+                response = {'status': 'success: user updated',
+                            'code': status.HTTP_201_CREATED,
+                            'data': serializer.data}
+                return Response(response)
+            return Response(serializer.error_messages,
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            response = {'status': 'error: Not a superuser',
+                        'code': status.HTTP_403_FORBIDDEN}
+            return Response(response)
