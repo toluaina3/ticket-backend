@@ -11,7 +11,7 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
         re_path(r'^login/$', views.Login.as_view(), name='login'),
         re_path(r'^logout/$', views.Logout.as_view(), name='logout'),
         re_path(r'^password/update/$', views.UpdatePassword.as_view(), name='reset-password'),
-        re_path(r'^ticket/list/(?P<user_request_id>[-\w\d]+)/$', views.list_ticket.as_view(), name='ticket-list'),
+        re_path(r'^ticket/list/$', views.list_ticket.as_view(), name='ticket-list'),
         re_path(r'^ticket/create/(?P<pk>[-\w\d]+)/$', views.ticket_create.as_view(), name='ticket-create'),
         re_path(r'^sla/list/$', views.sla_list.as_view(), name='sla-list'),
         re_path(r'^sla/create/(?P<pk>[-\w\d]+)/$', views.sla_create.as_view(), name='sla-create'),
@@ -20,4 +20,6 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
                 name='user-management-list'),
         re_path(r'^user-management/update/(?P<user_permit>[-\w\d]+)/$', views.user_management_update.as_view(),
                 name='user-management-update'),
+        re_path(r'^user-management/active/(?P<user_pk>[-\w\d]+)/$', views.user_management_deactivate.as_view(),
+                name='user-management-activate'),
         ]

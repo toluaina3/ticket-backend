@@ -203,6 +203,15 @@ class List_ticketSerialized(serializers.ModelSerializer):
         fields = ['request_request', 'user_request']
 
 
+class Retrieve_ticketSerialized(serializers.ModelSerializer):
+    request_request = RequestTableSerialized()
+    user_request = UserApiSerialized()
+
+    class Meta:
+        model = user_request_table
+        fields = ['request_request', 'user_request']
+
+
 class PriorityCreateSerializer(serializers.ModelSerializer):
     priority_field = serializers.ChoiceField(priority_tables.priority_choice)
 
@@ -285,10 +294,11 @@ class PermissionApiSerializer2(serializers.ModelSerializer):
         bio_key = validated_data['user_permit']['bio_user_relation']
         user_key = validated_data['user_permit']
         instance_phone = self.instance.user_permit.bio_user_relation.phone
-        inty=instance.role_permit
+        inty = instance.role_permit
 
         if instance_phone != bio_key['phone']:
-            role_update = RoleApiSerialized.update(RoleApiSerialized(), instance=inty, validated_data=validated_data['role_permit'])
+            role_update = RoleApiSerialized.update(RoleApiSerialized(), instance=inty,
+                                                   validated_data=validated_data['role_permit'])
             User.objects.filter(user_pk=self.instance.user_permit.user_pk). \
                 update(first_name=user_key['first_name'], last_name=user_key['last_name'])
             bio.objects.filter(bio_user_id=self.instance.user_permit.user_pk) \
@@ -299,4 +309,7 @@ class PermissionApiSerializer2(serializers.ModelSerializer):
             return result
 
 
-
+class UserPermitSerializer2(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['user_pk', 'first_name', 'last_name', 'is_active']

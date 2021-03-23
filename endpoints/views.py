@@ -8,7 +8,8 @@ from .serializers import PermissionApiSerializer, RoleApiSerialized, \
     UpdatePasswordSerialized, BioApiSerialized, \
     PasswordResetSerializer, LoginAPiSerializer, \
     List_ticketSerialized, TicketCreateSerialized, \
-    SLACreateSerializer, SLAListSerialized, PermissionApiSerializer2
+    SLACreateSerializer, SLAListSerialized, \
+    PermissionApiSerializer2, UserPermitSerializer2
 from django.utils import timezone
 from rest_framework import status, generics
 from clean_code.tasks import send_mail_password_reset_api
@@ -154,11 +155,27 @@ class list_ticket(ListAPIView):
     # authentication_classes = [JSONWebTokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = List_ticketSerialized
-    lookup_field = 'user_request_id'
 
     def get_queryset(self):
-        query = user_request_table.objects.all().order_by('-request_request__request_open')
-        return query
+        if self.request.user.permit_user.filter(role_permit__role='IT team').only().cache():
+            print('jere')
+            query = user_request_table.objects.filter \
+                (request_request__assigned_to=self.request.user.first_name + ' ' + self.request.user.last_name) \
+                .order_by('-request_request__request_open').only()
+            return query
+        elif self.request.user.permit_user.filter(role_permit__role='User').only().cache():
+            query = user_request_table.objects.filter \
+                (user_request_id=self.request.user.user_pk) \
+                .order_by('-request_request__request_open').only()
+            return query
+        elif self.request.user.permit_user.filter(role_permit__role='Admin').only().cache():
+            query = user_request_table.objects.all() \
+                .order_by('-request_request__request_open').only().cache()
+            return query
+        else:
+            response = {'status': 'Role has not been assigned',
+                        'code': status.HTTP_400_BAD_REQUEST}
+            return Response(response)
 
 
 class ticket_create(CreateAPIView):
@@ -265,12 +282,17 @@ class user_management_update(generics.UpdateAPIView, generics.RetrieveAPIView):
     lookup_field = 'user_permit'
 
     def get_queryset(self):
-        invalidate_model(bio)
-        invalidate_model(roles_table)
-        invalidate_model(User)
-        invalidate_model(permission)
-        query = permission.objects.all()
-        return query
+        if self.request.user.is_superuser:
+            invalidate_model(bio)
+            invalidate_model(roles_table)
+            invalidate_model(User)
+            invalidate_model(permission)
+            query = permission.objects.all()
+            return query
+        else:
+            response = {'status': 'User not found',
+                        'code': status.HTTP_400_BAD_REQUEST}
+            return Response(response)
 
     def put(self, request, *args, **kwargs):
         if self.request.user.is_superuser:
@@ -305,3 +327,43 @@ class user_management_update(generics.UpdateAPIView, generics.RetrieveAPIView):
                     return Response(response)
                 return Response(serializer.error_messages,
                                 status=status.HTTP_400_BAD_REQUEST)
+        response = {'status': 'User not found',
+                    'code': status.HTTP_400_BAD_REQUEST}
+        return Response(response)
+
+
+class user_management_deactivate(generics.RetrieveAPIView, generics.UpdateAPIView):
+    # authentication_classes = [JSONWebTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserPermitSerializer2
+    lookup_field = 'user_pk'
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            invalidate_model(User)
+            queryset = User.objects.all()
+            return queryset
+        else:
+            response = {'status': 'Not a superuser',
+                        'code': status.HTTP_400_BAD_REQUEST}
+            return Response(response)
+
+    def update(self, request, *args, **kwargs):
+        if self.request.user.is_superuser:
+            if User.objects.get(user_pk=self.request.data['user_pk']):
+                if User.objects.get(user_pk=self.request.data['user_pk']).is_active:
+                    User.objects.filter \
+                        (user_pk=self.request.data['user_pk']).update(is_active=False)
+                    response = {'status': 'User deactivated successfully',
+                                'code': status.HTTP_201_CREATED}
+                    return Response(response)
+                elif not User.objects.get(user_pk=self.request.data['user_pk']).is_active:
+                    User.objects.filter \
+                        (user_pk=self.request.data['user_pk']).update(is_active=True)
+                    response = {'status': 'User activated successfully',
+                                'code': status.HTTP_201_CREATED}
+                    return Response(response)
+            else:
+                response = {'status': 'User not found',
+                            'code': status.HTTP_400_BAD_REQUEST}
+                return Response(response)
