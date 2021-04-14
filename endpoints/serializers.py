@@ -4,9 +4,8 @@ from rest_framework_jwt.settings import api_settings
 from request.models import bio, roles_table, permission, response_table, \
     request_table, user_request_table, sla, priority_tables
 from django.contrib.auth import authenticate, login, logout
-from drf_writable_nested.serializers import WritableNestedModelSerializer, \
-    NestedUpdateMixin
-
+from request.ticket_number import ticket_number
+from django.db.models.query_utils import Q
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
@@ -191,7 +190,7 @@ class RequestTableSerialized(serializers.ModelSerializer):
         model = request_table
         fields = ['ticket_number', 'assigned_to',
                   'copy_team', 'close_request',
-                  'request_open', 'confirm', 'sla_category']
+                  'request_open', 'confirm', 'sla_category', 'id']
 
 
 class List_ticketSerialized(serializers.ModelSerializer):
@@ -263,7 +262,9 @@ class TicketCreateSerialized(serializers.ModelSerializer):
         category_get = validated_data.get('request_category')
         query_fill = sla.objects.filter(sla_category=category_get).values('id')[0][
             'id']
-        request_user = request_table.objects.create(request=validated_data.get('request'), sla_category_id=query_fill)
+        request_user = request_table.objects.create \
+            (request=validated_data.get('request'), sla_category_id=query_fill,
+             ticket_number=ticket_number())
         request_user.save()
         return request_user
 
@@ -313,3 +314,17 @@ class UserPermitSerializer2(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_pk', 'first_name', 'last_name', 'is_active']
+
+
+class Ticket_assign_task(serializers.ModelSerializer):
+    choices = [(user.first_name + ' ' + user.last_name, user.get_full_name)
+               for user in
+               (User.objects.filter(Q(permit_user__role_permit__role='IT team'))
+                .order_by('first_name').only())]
+    close_request = serializers.ChoiceField(choices=request_table.close)
+    assigned_to = serializers.ChoiceField(choices=choices)
+    copy_team = serializers.ChoiceField(choices=choices)
+
+    class Meta:
+        model = request_table
+        fields = ['assigned_to', 'copy_team', 'close_request', 'id', 'request']

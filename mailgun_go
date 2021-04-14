@@ -1,4 +1,9 @@
- if self.request.data is not None:
+ i
+ gunicron clean_code.wsgi
+
+
+
+ f self.request.data is not None:
                 try:
                     if bio.objects.get(phone=self.request.data['user_permit']['bio_user_relation']['phone']):
                         role_update = roles_table.objects.filter \

@@ -1,32 +1,28 @@
 from django.contrib.auth import login, logout
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView, ListAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .permission import RegistrationPermission
-from .serializers import PermissionApiSerializer, RoleApiSerialized, \
+from .serializers import PermissionApiSerializer, \
     UpdatePasswordSerialized, BioApiSerialized, \
     PasswordResetSerializer, LoginAPiSerializer, \
     List_ticketSerialized, TicketCreateSerialized, \
     SLACreateSerializer, SLAListSerialized, \
-    PermissionApiSerializer2, UserPermitSerializer2
-from django.utils import timezone
+    PermissionApiSerializer2, UserPermitSerializer2, \
+    Ticket_assign_task
 from rest_framework import status, generics
 from clean_code.tasks import send_mail_password_reset_api
 from request.models import bio, User, roles_table, permission
-from rest_framework_jwt.settings import api_settings
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.authtoken.models import Token
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from .utils import jwt_response_payload_handler
 from request.models import user_request_table, request_table, sla, permission
-from django.shortcuts import get_object_or_404
 from clean_code.tasks import logging_info_task, send_mail_request_raised, \
-    send_mail_request_raised_it_team
+    send_mail_request_raised_it_team, send_mail_task_assigned_started, \
+    send_mail_task_completed_user, send_mail_task_cancelled_request
 from cacheops import invalidate_model
-
-jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+from django.utils import timezone
+from .functions.functions import token_pass
 
 
 # API List view. use the serialized registration view below
@@ -125,17 +121,11 @@ class Login(APIView):
     @csrf_exempt
     def post(self, request):
         serializer = LoginAPiSerializer(data=request.data)
-        # displays form on postman
         if serializer.is_valid(raise_exception=ValueError):
             user = serializer.save(validated_data=request.data)
             login(request, user)
-            payload = jwt_payload_handler(user)
-            print(payload)
-            token = jwt_encode_handler(payload)
-            talk, _ = Token.objects.get_or_create(user=user)
-            red = jwt_response_payload_handler(token, user, request=request)
-            # print(token)
-            return Response({'token': red, 'key': talk.key,
+            red = token_pass(user=user, request=request)
+            return Response({'token': red,
                              'code': status.HTTP_200_OK,
                              'status': 'success', 'message': '({}, logged in)'.format(request.user.get_full_name())})
         return Response('Invalid username and password try again')
@@ -158,7 +148,6 @@ class list_ticket(ListAPIView):
 
     def get_queryset(self):
         if self.request.user.permit_user.filter(role_permit__role='IT team').only().cache():
-            print('jere')
             query = user_request_table.objects.filter \
                 (request_request__assigned_to=self.request.user.first_name + ' ' + self.request.user.last_name) \
                 .order_by('-request_request__request_open').only()
@@ -366,4 +355,58 @@ class user_management_deactivate(generics.RetrieveAPIView, generics.UpdateAPIVie
             else:
                 response = {'status': 'User not found',
                             'code': status.HTTP_400_BAD_REQUEST}
+                return Response(response)
+
+
+class Ticket_assign(generics.UpdateAPIView, generics.RetrieveAPIView):
+    # authentication_classes = [JSONWebTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = Ticket_assign_task
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        invalidate_model(request_table)
+        queryset = request_table.objects.all()
+        return queryset
+
+    def put(self, request, *args, **kwargs):
+        requester_id = user_request_table.objects \
+            .get(request_request_id=self.request.data['id']).user_request.user_pk
+        if self.request.data['assigned_to'] is None:
+            response = {'status': 'You must assign ticket to a user',
+                        'code': status.HTTP_400_BAD_REQUEST}
+            return Response(response)
+        elif self.request.data['assigned_to'] is not None:
+            if self.request.data['close_request'] == 'Started':
+                request_table.objects.filter \
+                    (id=self.request.data['id'].update(request_time_started=timezone.now(),
+                                                       close_request='Started',
+                                                       assigned_to=self.request.data['assigned_to'],
+                                                       copy_team=self.request.data['copy_team']))
+                # task, send email to the user and the assignee
+                send_mail_task_assigned_started(assign=self.request.data['assigned_to'], user=requester_id)
+                response = {'status': 'Ticket successfully started',
+                            'code': status.HTTP_201_CREATED}
+                return Response(response)
+            elif self.request.data['close_request'] == 'Completed':
+                request_table.objects.filter \
+                    (id=self.request.data['id'].update(request_time_closed=timezone.now(),
+                                                       close_request='Completed',
+                                                       assigned_to=self.request.data['assigned_to'],
+                                                       copy_team=self.request.data['copy_team']))
+                # task send a completion email to the user and the assignee
+                send_mail_task_completed_user(assign=self.request.data['assigned_to'],
+                                              user=requester_id)
+                response = {'status': 'Ticket successfully completed',
+                            'code': status.HTTP_201_CREATED}
+                return Response(response)
+            elif self.request.data['close_request'] == 'Cancelled':
+                request_table.objects.filter \
+                    (id=self.request.data['id'].update(request_time_updated=timezone.now(),
+                                                       close_request='Cancelled',
+                                                       assigned_to=self.request.data['assigned_to'],
+                                                       copy_team=self.request.data['copy_team']))
+                send_mail_task_cancelled_request(user=requester_id)
+                response = {'status': 'Ticket successfully cancelled',
+                            'code': status.HTTP_201_CREATED}
                 return Response(response)

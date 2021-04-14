@@ -14,6 +14,7 @@ cryptography==2.9.2
 Django==3.1.6
 django-cacheops==5.1
 django-celery-beat==2.2.0
+django-cors-headers==3.7.0
 django-crispy-forms==1.11.0
 django-debug-toolbar==3.2
 django-environ==0.4.5
@@ -22,15 +23,16 @@ django-redis-sessions==0.6.2
 django-timezone-field==4.1.1
 djangorestframework==3.12.2
 djangorestframework-jwt==1.11.0
+drf-writable-nested==0.6.2
 funcy==1.15
+gunicorn==20.0.4
 idna==2.6
-jwt==1.0.0
 kombu==5.0.2
 mysqlclient==2.0.1
 prompt-toolkit==3.0.7
 psycopg2-binary==2.8.6
 pycparser==2.20
-PyJWT==1.7.1
+PyJWT==1.5.2
 python-crontab==2.5.1
 python-dateutil==2.8.1
 pytz==2020.1

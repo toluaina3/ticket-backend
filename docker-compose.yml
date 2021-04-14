@@ -5,10 +5,10 @@ services:
       #context: . #build the django web from docker file in the base directory
       #dockerfile: Dockerfile-alternate 
       container_name: cleancode_django_app
+      # run database migration and spin up web service
+      #command: bash -c 'python manage.py migrate'
       volumes:
         - .:/usr/src/app/
-      # run database migration and spin up web service
-      command: bash -c 'python manage.py migrate && python manage.py runserver 0.0.0.0:8000'
       networks:
        vpcbr:
          ipv4_address: 192.100.0.4
@@ -16,7 +16,7 @@ services:
         - db
         - redis-cache
 
-     
+
     db:
       image: postgres
       environment:
@@ -36,6 +36,7 @@ services:
       networks:
        vpcbr:
          ipv4_address: 192.100.0.5
+      restart: on-failure
 
     redis-cache:
       image: library/redis:6.0.8  #:6.0.8
@@ -70,6 +71,7 @@ services:
       networks:
         vpcbr:
           ipv4_address: 192.100.0.7
+      restart: on-failure
 
     celery-beat:
       build:
@@ -87,16 +89,33 @@ services:
       networks:
         vpcbr:
           ipv4_address: 192.100.0.8
+      restart: on-failure
 
-
+    nginx:
+      image: nginx:latest
+      links:
+        - web
+      volumes:
+        - ./nginx.conf:/etc/nginx/nginx.conf
+        - /etc/letsencrypt/:/etc/letsencrypt/
+        #- ./nginx/satic/:./static
+        #- ./ngnix/media/:./media
+      ports:
+        - '80'
+      networks:
+        vpcbr:
+          ipv4_address: 192.100.0.9
+      restart: on-failure
 volumes: 
   postgres.data:
   .:
   redis-data:
   celery.workers:
   celery.beats:
+  nginx-config:
+
 networks:
-  vpcbr:
+  vpcbr: #name of the network
     driver: bridge
     ipam:
      config:

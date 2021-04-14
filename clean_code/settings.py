@@ -32,9 +32,9 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DJANGO_DEBUG')
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.100.0.4']
+ALLOWED_HOSTS = [env('ALLOWED_HOSTS'), '192.100.0.4']
 INTERNAL_IPS = '127.0.0.1'
 
 # Application definition
@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'endpoints',
     'rest_framework_jwt',
     'rest_framework.authtoken',
-    #'corsheaders',
+
 
 
 ]
@@ -114,7 +114,7 @@ DATABASES = {
         'USER': env('DATABASE_USER'),
         'PASSWORD': env('DATABASE_PASSWORD'),
         'HOST': env('DATABASE_HOST'),
-        'PORT': '5432',
+        'PORT': env('PORT'),
         'ATOMIC_REQUESTS': True,
 
     }

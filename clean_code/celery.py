@@ -3,13 +3,16 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 from django.conf import settings
-
+import environ
 # from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clean_code.settings')
-app = Celery('clean_code', broker='redis://user:$$ticket@192.100.0.6:6379',
-             backend='redis://user:$$ticket@192.100.0.6:6379', include=['clean_code.tasks'])
+app = Celery('clean_code', broker=env('CELERY_BROKER'),
+             backend=env('CELERY_BROKER'), include=['clean_code.tasks'])
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.

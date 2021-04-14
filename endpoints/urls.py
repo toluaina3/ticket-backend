@@ -22,4 +22,6 @@ if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
                 name='user-management-update'),
         re_path(r'^user-management/active/(?P<user_pk>[-\w\d]+)/$', views.user_management_deactivate.as_view(),
                 name='user-management-activate'),
+        re_path(r'^ticket/assign/(?P<id>[-\w\d]+)/$', views.Ticket_assign.as_view(),
+                name='ticket-assign'),
         ]
